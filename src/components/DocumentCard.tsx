@@ -45,7 +45,11 @@ export default function DocumentCard({
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <span className="shrink-0 w-8 h-8 rounded-lg bg-primary/10 dark:bg-accent/15 flex items-center justify-center text-primary dark:text-accent text-[10px] font-bold uppercase">
-            {(doc.mime_type?.split("/")[1] || doc.title.split(".").pop() || "؟").slice(0, 3)}
+            {(() => {
+              const ext = doc.title.includes(".") ? doc.title.split(".").pop() : null;
+              const sub = doc.mime_type?.split("/")[1]?.replace("jpeg", "jpg");
+              return (ext || sub || "؟").slice(0, 4).toUpperCase();
+            })()}
           </span>
           <h3 className="font-semibold text-text-primary dark:text-white truncate">{doc.title}</h3>
         </div>
