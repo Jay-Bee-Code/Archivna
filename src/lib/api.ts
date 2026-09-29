@@ -1,0 +1,141 @@
+import { invoke } from "@tauri-apps/api/core";
+
+export interface Document {
+  id: string;
+  title: string;
+  category_id: string | null;
+  file_hash: string;
+  file_size: number;
+  mime_type: string | null;
+  created_at: number;
+  updated_at: number | null;
+  has_ocr: boolean;
+}
+
+export interface NewDocumentInput {
+  title: string;
+  category_id: string | null;
+  file_base64: string;
+  mime_type: string | null;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  parent_id: string | null;
+  created_at: number;
+  document_count: number;
+}
+
+export interface NewCategoryInput {
+  name: string;
+  parent_id: string | null;
+}
+
+export type Role = "admin" | "archivist" | "reviewer" | "viewer";
+
+export interface PeerView {
+  node_id: string;
+  name: string;
+  addr: string;
+  last_seen: number;
+  last_sync: number | null;
+  last_error: string | null;
+}
+
+export interface SyncStatus {
+  configured: boolean;
+  running: boolean;
+  node_id: string | null;
+  node_name: string | null;
+  peers: PeerView[];
+  last_sync: number | null;
+}
+
+export interface UserPublic {
+  id: string;
+  username: string;
+  full_name: string | null;
+  role: Role;
+}
+
+export const api = {
+  // المصادقة وفتح الخزنة
+  vaultExists: () => invoke<boolean>("vault_exists"),
+  unlockVault: (passphrase: string) =>
+    invoke<{ has_admin: boolean }>("unlock_vault", { passphrase }),
+  createAdmin: (username: string, password: string, fullName: string | null) =>
+    invoke<UserPublic>("create_admin", { username, password, fullName }),
+  createUser: (input: {
+    username: string;
+    password: string;
+    fullName: string | null;
+    role: Role;
+    department: string | null;
+  }) => invoke<UserPublic>("create_user", input),
+  login: (username: string, password: string) =>
+    invoke<UserPublic>("login", { username, password }),
+  logout: () => invoke<void>("logout"),
+  currentUser: () => invoke<UserPublic | null>("current_user"),
+
+  // الوثائق
+  addDocument: (input: NewDocumentInput) => invoke<Document>("add_document", { input }),
+  listDocuments: () => invoke<Document[]>("list_documents"),
+  searchDocuments: (query: string) => invoke<Document[]>("search_documents", { query }),
+  getDocumentFile: (id: string) => invoke<string>("get_document_file", { id }),
+  deleteDocument: (id: string) => invoke<void>("delete_document", { id }),
+
+  // الفئات
+  addCategory: (input: NewCategoryInput) => invoke<Category>("add_category", { input }),
+  listCategories: () => invoke<Category[]>("list_categories"),
+  deleteCategory: (id: string) => invoke<void>("delete_category", { id }),
+  listDocumentsByCategory: (categoryId: string) =>
+    invoke<Document[]>("list_documents_by_category", { categoryId }),
+
+  // OCR
+  ocrStatus: () => invoke<boolean>("ocr_status"),
+
+  // المزامنة
+  syncStatus: () => invoke<SyncStatus>("sync_status"),
+  hasUsers: () => invoke<boolean>("has_users"),
+  setSyncKey: (passphrase: string) => invoke<void>("set_sync_key", { passphrase }),
+  syncNow: () => invoke<void>("sync_now"),
+};
+
+/** يحوّل ملف (من input[type=file]) إلى base64 نظيف بدون البادئة data:...;base64, */
+export function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      resolve(result.split(",")[1]);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/** يبدأ تنزيل ملف في المتصفح من محتوى base64 (يُستخدم لعرض/تنزيل وثيقة بعد فك تشفيرها) */
+export function downloadBase64(base64: string, filename: string, mimeType: string | null) {
+  const byteChars = atob(base64);
+  const byteNumbers = new Array(byteChars.length);
+  for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+  const blob = new Blob([new Uint8Array(byteNumbers)], { type: mimeType || "application/octet-stream" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/** رسالة خطأ نظيفة من استثناء Tauri (قد يكون كائن ArchiveError أو نصًا) */
+export function errorMessage(e: unknown): string {
+  if (typeof e === "string") return e;
+  if (e && typeof e === "object") {
+    const obj = e as Record<string, unknown>;
+    const key = Object.keys(obj)[0];
+    if (key && typeof obj[key] === "string") return obj[key] as string;
+  }
+  return "حدث خطأ غير متوقع";
+}

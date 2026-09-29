@@ -1,0 +1,32 @@
+[package]
+name = "govt-archive-system"
+version = "0.1.0"
+description = "نظام أرشفة B2B للمؤسسات الحكومية — Offline-First"
+authors = ["you"]
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rusqlite = { version = "0.31", features = ["bundled-sqlcipher-vendored-openssl", "backup"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+sha2 = "0.10"
+chrono = { version = "0.4", features = ["serde"] }
+thiserror = "1"
+tokio = { version = "1", features = ["full"] }
+base64 = "0.22"
+aes-gcm = "0.10"
+argon2 = { version = "0.5", features = ["password-hash"] }
+rand = "0.8"
+
+# المزامنة عبر الشبكة المحلية (Phase 4)
+mdns-sd = "0.11"
+tokio-tungstenite = "0.21"
+futures-util = "0.3"
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]
