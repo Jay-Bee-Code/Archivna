@@ -29,16 +29,16 @@ export default function CategorySidebar({
 
   return (
     <div className="flex flex-col gap-1">
-      <h2 className="text-xs font-semibold text-text-secondary dark:text-white/40 mb-2 px-1">
+      <h2 className="text-[11px] font-semibold text-text-secondary dark:text-white/40 mb-1 px-1 uppercase tracking-wide">
         الفئات
       </h2>
 
       <button
         onClick={() => onSelect(null)}
-        className={`text-start px-3 py-2 rounded-md text-sm transition-colors ${
+        className={`text-start px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
           activeCategory === null
-            ? "bg-primary text-white"
-            : "text-text-primary dark:text-white/80 hover:bg-black/5 dark:hover:bg-white/5"
+            ? "bg-primary dark:bg-accent/25 text-white dark:text-white"
+            : "text-text-primary dark:text-white/70 hover:bg-black/5 dark:hover:bg-white/5"
         }`}
       >
         كل الوثائق
@@ -48,16 +48,16 @@ export default function CategorySidebar({
         <button
           key={cat.id}
           onClick={() => onSelect(cat.id)}
-          className={`text-start px-3 py-2 rounded-md text-sm flex items-center justify-between transition-colors ${
+          className={`text-start px-3 py-2 rounded-lg text-sm flex items-center justify-between transition-colors ${
             activeCategory === cat.id
-              ? "bg-primary text-white"
-              : "text-text-primary dark:text-white/80 hover:bg-black/5 dark:hover:bg-white/5"
+              ? "bg-primary dark:bg-accent/25 text-white dark:text-white"
+              : "text-text-primary dark:text-white/70 hover:bg-black/5 dark:hover:bg-white/5"
           }`}
         >
           <span className="truncate">{cat.name}</span>
           <span
-            className={`text-[11px] ${
-              activeCategory === cat.id ? "text-white/70" : "text-text-secondary dark:text-white/40"
+            className={`text-[11px] tabular-nums ${
+              activeCategory === cat.id ? "text-white/70" : "text-text-secondary dark:text-white/30"
             }`}
           >
             {cat.document_count}
@@ -71,13 +71,14 @@ export default function CategorySidebar({
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           placeholder="فئة جديدة…"
-          className="flex-1 min-w-0 text-xs px-2 py-1.5 rounded-md border border-border-light dark:border-white/10
-            bg-white dark:bg-white/5 dark:text-white focus:outline-none focus:ring-1 focus:ring-accent"
+          className="flex-1 min-w-0 text-xs px-2.5 py-1.5 rounded-lg border border-border-light dark:border-white/10
+            bg-white dark:bg-white/5 dark:text-white placeholder:text-text-secondary/60 dark:placeholder:text-white/30
+            focus:outline-none focus:ring-1 focus:ring-accent"
         />
         <button
           type="submit"
           disabled={adding || !newName.trim()}
-          className="text-xs px-2 py-1.5 rounded-md bg-accent text-white disabled:opacity-40 shrink-0"
+          className="text-xs px-2.5 py-1.5 rounded-lg bg-accent text-white disabled:opacity-40 shrink-0 hover:bg-primary transition-colors"
         >
           +
         </button>

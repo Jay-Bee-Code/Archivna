@@ -41,13 +41,18 @@ export default function DocumentCard({
   }
 
   return (
-    <div className="border border-border-light dark:border-white/10 rounded-lg p-4 bg-white dark:bg-white/5 hover:shadow-md transition-shadow flex flex-col gap-2">
+    <div className="group border border-border-light dark:border-white/10 rounded-xl p-4 bg-white dark:bg-white/[0.03] hover:border-accent/40 hover:shadow-md dark:hover:shadow-black/20 transition-all flex flex-col gap-2.5">
       <div className="flex items-start justify-between gap-2">
-        <h3 className="font-semibold text-text-primary dark:text-white truncate">{doc.title}</h3>
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="shrink-0 w-8 h-8 rounded-lg bg-primary/10 dark:bg-accent/15 flex items-center justify-center text-primary dark:text-accent text-[10px] font-bold uppercase">
+            {(doc.mime_type?.split("/")[1] || doc.title.split(".").pop() || "؟").slice(0, 3)}
+          </span>
+          <h3 className="font-semibold text-text-primary dark:text-white truncate">{doc.title}</h3>
+        </div>
         {canWrite && (
           <button
             onClick={() => onDelete(doc.id)}
-            className="text-danger/70 hover:text-danger text-sm shrink-0"
+            className="text-text-secondary/50 hover:text-danger dark:text-white/30 dark:hover:text-danger text-xs shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
             title="حذف"
           >
             حذف
@@ -55,7 +60,7 @@ export default function DocumentCard({
         )}
       </div>
 
-      <div className="flex flex-wrap gap-x-3 text-xs text-text-secondary dark:text-white/50">
+      <div className="flex flex-wrap gap-x-3 text-xs text-text-secondary dark:text-white/40">
         <span>{formatSize(doc.file_size)}</span>
         <span>•</span>
         <span>{formatDate(doc.created_at)}</span>
@@ -84,9 +89,9 @@ export default function DocumentCard({
         <button
           onClick={handleDownload}
           disabled={downloading}
-          className="text-xs text-accent hover:underline disabled:opacity-50"
+          className="text-xs text-accent hover:text-primary dark:hover:text-white font-medium disabled:opacity-50 transition-colors"
         >
-          {downloading ? "جارٍ فك التشفير…" : "تنزيل"}
+          {downloading ? "جارٍ فك التشفير…" : "تنزيل ↓"}
         </button>
       </div>
 

@@ -1,3 +1,4 @@
+import Logo from "./Logo";
 import { useState, useEffect } from "react";
 import { api, errorMessage } from "../lib/api";
 
@@ -48,10 +49,11 @@ export default function VaultUnlock({
     <div className="min-h-screen flex items-center justify-center bg-bg-light dark:bg-bg-dark px-4">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm bg-white dark:bg-white/5 border border-border-light dark:border-white/10 rounded-lg p-6 flex flex-col gap-4"
+        className="w-full max-w-sm bg-white dark:bg-white/[0.04] border border-border-light dark:border-white/10 rounded-2xl p-7 flex flex-col gap-4 shadow-sm dark:shadow-none"
       >
         <div>
-          <h1 className="text-lg font-bold text-primary dark:text-white">
+          <div className="flex justify-center mb-1"><Logo size={36} /></div>
+        <h1 className="text-lg font-bold text-primary dark:text-white">
             {isFirstRun ? "إنشاء خزنة جديدة" : "فتح الخزنة"}
           </h1>
           <p className="text-xs text-text-secondary mt-1">
@@ -67,7 +69,7 @@ export default function VaultUnlock({
           onChange={(e) => setPassphrase(e.target.value)}
           placeholder="العبارة السرية"
           autoFocus
-          className="px-3 py-2 rounded-md border border-border-light dark:border-white/10 bg-white dark:bg-white/5 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent"
+          className="px-3.5 py-2.5 rounded-lg border border-border-light dark:border-white/10 bg-white dark:bg-white/5 dark:text-white placeholder:text-text-secondary/60 dark:placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-accent transition-shadow"
         />
 
         {isFirstRun && (
@@ -76,7 +78,7 @@ export default function VaultUnlock({
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
             placeholder="تأكيد العبارة السرية"
-            className="px-3 py-2 rounded-md border border-border-light dark:border-white/10 bg-white dark:bg-white/5 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent"
+            className="px-3.5 py-2.5 rounded-lg border border-border-light dark:border-white/10 bg-white dark:bg-white/5 dark:text-white placeholder:text-text-secondary/60 dark:placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-accent transition-shadow"
           />
         )}
 
@@ -85,7 +87,7 @@ export default function VaultUnlock({
         <button
           type="submit"
           disabled={loading || !passphrase}
-          className="py-2 rounded-md bg-primary text-white text-sm hover:bg-accent transition-colors disabled:opacity-40"
+          className="py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-accent shadow-sm hover:shadow transition-all disabled:opacity-40 disabled:shadow-none"
         >
           {loading ? "جارٍ الفتح…" : isFirstRun ? "إنشاء الخزنة" : "فتح"}
         </button>

@@ -7,6 +7,8 @@ import AdminSetup from "./components/AdminSetup";
 import SyncSetup from "./components/SyncSetup";
 import LoginScreen from "./components/LoginScreen";
 import NetworkStatus from "./components/NetworkStatus";
+import EmptyState from "./components/EmptyState";
+import Logo from "./components/Logo";
 
 type Stage = "checking" | "unlock" | "setup-admin" | "sync-setup" | "login" | "ready";
 
@@ -107,21 +109,27 @@ function Archive({ user, onLogout }: { user: UserPublic; onLogout: () => void })
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="border-b border-border-light dark:border-white/10 bg-white dark:bg-white/5 px-6 py-4 flex items-center justify-between">
-        <h1 className="text-lg font-bold text-primary dark:text-white">نظام الأرشفة الحكومي</h1>
+      <header className="border-b border-border-light dark:border-white/10 bg-white dark:bg-bg-dark/60 backdrop-blur px-6 py-3.5 flex items-center justify-between sticky top-0 z-20">
+        <div className="flex items-center gap-2.5">
+          <Logo size={26} />
+          <h1 className="text-base font-bold text-primary dark:text-white">نظام الأرشفة الحكومي</h1>
+        </div>
 
         <div className="flex items-center gap-4">
           <NetworkStatus />
           <div className="h-4 w-px bg-border-light dark:bg-white/10" />
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-text-primary dark:text-white">
+            <span className="text-text-primary dark:text-white/90">
               {user.full_name || user.username}
             </span>
-            <span className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+            <span className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 dark:bg-accent/20 text-primary dark:text-accent">
               {ROLE_LABELS[user.role] || user.role}
             </span>
           </div>
-          <button onClick={onLogout} className="text-xs text-text-secondary hover:text-danger">
+          <button
+            onClick={onLogout}
+            className="text-xs text-text-secondary dark:text-white/50 hover:text-danger dark:hover:text-danger transition-colors"
+          >
             خروج
           </button>
         </div>
@@ -130,8 +138,12 @@ function Archive({ user, onLogout }: { user: UserPublic; onLogout: () => void })
       <div className="flex-1 flex">
         <aside className="w-56 border-e border-border-light dark:border-white/10 p-4 hidden md:flex md:flex-col md:gap-4">
           {canWrite && (
-            <label className="block cursor-pointer">
-              <span className="block w-full text-center py-2 px-4 rounded-md bg-primary text-white text-sm hover:bg-accent transition-colors">
+            <label className="block cursor-pointer group">
+              <span className="flex items-center justify-center gap-2 w-full text-center py-2.5 px-4 rounded-lg bg-primary text-white text-sm font-medium shadow-sm hover:bg-accent hover:shadow transition-all">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="opacity-90">
+                  <path d="M8 3v7M4.5 6.5L8 3l3.5 3.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M3 12.5h10" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
                 رفع وثيقة جديدة
               </span>
               <input type="file" onChange={handleUpload} className="sr-only" />
@@ -158,7 +170,7 @@ function Archive({ user, onLogout }: { user: UserPublic; onLogout: () => void })
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="بحث في الأرشيف… (العنوان والمحتوى)"
-              className="flex-1 max-w-xl px-4 py-2 rounded-md border border-border-light focus:outline-none focus:ring-2 focus:ring-accent bg-white dark:bg-white/5 dark:text-white"
+              className="flex-1 max-w-xl px-4 py-2.5 rounded-lg border border-border-light dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-accent bg-white dark:bg-white/5 dark:text-white placeholder:text-text-secondary/70 dark:placeholder:text-white/30"
             />
             {activeCategoryName && (
               <span className="text-xs px-3 py-1.5 rounded-full bg-accent/10 text-accent whitespace-nowrap">
@@ -170,11 +182,21 @@ function Archive({ user, onLogout }: { user: UserPublic; onLogout: () => void })
           {error && <div className="mb-4 text-sm text-danger bg-danger/10 rounded-md p-3">{error}</div>}
 
           {loading && documents.length === 0 ? (
-            <p className="text-text-secondary text-sm">جارٍ التحميل…</p>
+            <div className="flex items-center gap-2 text-text-secondary dark:text-white/40 text-sm py-10 justify-center">
+              <span className="w-3.5 h-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />
+              جارٍ التحميل…
+            </div>
           ) : documents.length === 0 ? (
-            <p className="text-text-secondary text-sm">
-              لا توجد وثائق بعد{canWrite ? " — ابدأ برفع وثيقة من الشريط الجانبي." : "."}
-            </p>
+            <EmptyState
+              title={query.trim() ? "لا نتائج مطابقة" : "لا توجد وثائق بعد"}
+              hint={
+                query.trim()
+                  ? "جرّب كلمات بحث أخرى، أو تحقق من الفئة المحددة."
+                  : canWrite
+                    ? "ابدأ برفع وثيقة من الشريط الجانبي."
+                    : undefined
+              }
+            />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {documents.map((doc) => (

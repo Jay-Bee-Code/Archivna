@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Logo from "./Logo";
 import { api, errorMessage } from "../lib/api";
 
 /**
@@ -33,8 +34,9 @@ export default function SyncSetup({ onDone }: { onDone: () => void }) {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-bg-light dark:bg-bg-dark px-4">
-      <div className="w-full max-w-sm bg-white dark:bg-white/5 border border-border-light dark:border-white/10 rounded-lg p-6 flex flex-col gap-4">
+      <div className="w-full max-w-sm bg-white dark:bg-white/[0.04] border border-border-light dark:border-white/10 rounded-2xl p-7 flex flex-col gap-4 shadow-sm dark:shadow-none">
         <div>
+          <div className="flex justify-center mb-1"><Logo size={36} /></div>
           <h1 className="text-lg font-bold text-primary dark:text-white">مزامنة الشبكة المحلية</h1>
           <p className="text-xs text-text-secondary mt-1">
             إن كان لديك أجهزة أخرى في نفس المصلحة تريد مشاركة الأرشيف معها تلقائيًا عبر الشبكة
@@ -46,13 +48,13 @@ export default function SyncSetup({ onDone }: { onDone: () => void }) {
           <div className="flex flex-col gap-2">
             <button
               onClick={() => setMode("form")}
-              className="py-2 rounded-md bg-primary text-white text-sm hover:bg-accent transition-colors"
+              className="py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-accent shadow-sm hover:shadow transition-all"
             >
               تفعيل المزامنة الآن
             </button>
             <button
               onClick={onDone}
-              className="py-2 rounded-md border border-border-light dark:border-white/10 text-text-secondary text-sm hover:bg-black/5 dark:hover:bg-white/5"
+              className="py-2.5 rounded-lg border border-border-light dark:border-white/10 text-text-secondary dark:text-white/60 text-sm hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
             >
               تخطّي — العمل على هذا الجهاز فقط
             </button>
@@ -69,14 +71,14 @@ export default function SyncSetup({ onDone }: { onDone: () => void }) {
               onChange={(e) => setPassphrase(e.target.value)}
               placeholder="مفتاح المزامنة المشترك"
               autoFocus
-              className="px-3 py-2 rounded-md border border-border-light dark:border-white/10 bg-white dark:bg-white/5 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent"
+              className="px-3.5 py-2.5 rounded-lg border border-border-light dark:border-white/10 bg-white dark:bg-white/5 dark:text-white placeholder:text-text-secondary/60 dark:placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-accent transition-shadow"
             />
             <input
               type="password"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               placeholder="تأكيد مفتاح المزامنة"
-              className="px-3 py-2 rounded-md border border-border-light dark:border-white/10 bg-white dark:bg-white/5 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent"
+              className="px-3.5 py-2.5 rounded-lg border border-border-light dark:border-white/10 bg-white dark:bg-white/5 dark:text-white placeholder:text-text-secondary/60 dark:placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-accent transition-shadow"
             />
 
             {error && <p className="text-sm text-danger">{error}</p>}
@@ -84,7 +86,7 @@ export default function SyncSetup({ onDone }: { onDone: () => void }) {
             <button
               type="submit"
               disabled={loading || passphrase.length < 8}
-              className="py-2 rounded-md bg-primary text-white text-sm hover:bg-accent transition-colors disabled:opacity-40"
+              className="py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-accent shadow-sm hover:shadow transition-all disabled:opacity-40"
             >
               {loading ? "جارٍ التفعيل…" : "تفعيل"}
             </button>

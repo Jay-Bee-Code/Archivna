@@ -56,14 +56,14 @@ export default function NetworkStatus() {
     <div className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 text-xs text-text-secondary dark:text-white/60 hover:text-text-primary dark:hover:text-white"
+        className="flex items-center gap-2 text-xs text-text-secondary dark:text-white/50 hover:text-text-primary dark:hover:text-white transition-colors"
       >
         <span className={`w-2 h-2 rounded-full ${dotColor}`} />
         {label}
       </button>
 
       {open && (
-        <div className="absolute left-0 mt-2 w-72 bg-white dark:bg-[#132033] border border-border-light dark:border-white/10 rounded-lg shadow-lg p-3 z-10 text-start">
+        <div className="absolute left-0 mt-2 w-72 bg-white dark:bg-[#132033] border border-border-light dark:border-white/10 rounded-xl shadow-lg dark:shadow-black/30 p-3.5 z-30 text-start">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-xs font-semibold text-text-secondary dark:text-white/50">
               أجهزة الشبكة المحلية

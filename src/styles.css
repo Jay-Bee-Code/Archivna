@@ -5,3 +5,9 @@
 body {
   margin: 0;
 }
+
+/* انتقال ناعم بين الوضع الفاتح والداكن، وبين الشاشات */
+* {
+  transition-property: background-color, border-color, color;
+  transition-duration: 150ms;
+}
