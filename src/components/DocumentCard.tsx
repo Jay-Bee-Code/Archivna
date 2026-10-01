@@ -1,11 +1,18 @@
 import { useState } from "react";
-import { Document, api, downloadBase64, errorMessage } from "../lib/api";
+import { Document, api, downloadBase64, errorMessage, CONFIDENTIALITY_LABELS, STATUS_LABELS } from "../lib/api";
 
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} بايت`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} كيلوبايت`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} ميغابايت`;
 }
+
+const CONF_STYLES: Record<number, string> = {
+  1: "bg-black/5 dark:bg-white/5 text-text-secondary dark:text-white/50",
+  2: "bg-warning/10 text-warning",
+  3: "bg-danger/10 text-danger",
+  4: "bg-danger/15 text-danger font-semibold",
+};
 
 function formatDate(timestamp: number): string {
   return new Date(timestamp * 1000).toLocaleDateString("ar-DZ", {
@@ -51,7 +58,14 @@ export default function DocumentCard({
               return (ext || sub || "؟").slice(0, 4).toUpperCase();
             })()}
           </span>
-          <h3 className="font-semibold text-text-primary dark:text-white truncate">{doc.title}</h3>
+          <div className="min-w-0">
+            <h3 className="font-semibold text-text-primary dark:text-white truncate">{doc.title}</h3>
+            {doc.registry_number && (
+              <p className="text-[11px] text-text-secondary dark:text-white/35 font-mono truncate">
+                {doc.registry_number}
+              </p>
+            )}
+          </div>
         </div>
         {canWrite && (
           <button
@@ -77,10 +91,20 @@ export default function DocumentCard({
       </div>
 
       <div className="flex items-center justify-between mt-1">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-[11px] px-2 py-0.5 rounded-full bg-success/10 text-success">
             🔒 مشفّر
           </span>
+          {doc.confidentiality_level > 1 && (
+            <span className={`text-[11px] px-2 py-0.5 rounded-full ${CONF_STYLES[doc.confidentiality_level]}`}>
+              {CONFIDENTIALITY_LABELS[doc.confidentiality_level]}
+            </span>
+          )}
+          {doc.status !== "approved" && (
+            <span className="text-[11px] px-2 py-0.5 rounded-full bg-accent/10 text-accent">
+              {STATUS_LABELS[doc.status] || doc.status}
+            </span>
+          )}
           {doc.has_ocr && (
             <span
               className="text-[11px] px-2 py-0.5 rounded-full bg-accent/10 text-accent"

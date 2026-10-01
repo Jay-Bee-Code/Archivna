@@ -9,11 +9,21 @@ use std::sync::Mutex;
 use tauri::{AppHandle, Manager, State};
 use uuid::Uuid;
 
-/// أدوار النظام — من الأعلى صلاحية للأدنى
+/// أدوار النظام — تتحكم في *نوع العملية* المسموحة (قراءة/كتابة/إدارة)
 pub const ROLE_ADMIN: &str = "admin";
 pub const ROLE_ARCHIVIST: &str = "archivist";
 pub const ROLE_REVIEWER: &str = "reviewer";
 pub const ROLE_VIEWER: &str = "viewer";
+
+/// مستويات السرية — راجع migrations/0002_org_structure.sql
+pub const CONF_NORMAL: i64 = 1;
+// القيم 2 و3 (محدود التداول، سري) مرجعية للتوثيق والواجهة الأمامية فقط؛
+// لا يستخدمها الكود صراحةً لأنها أرقام خام تُرسَل من الواجهة مباشرة
+#[allow(dead_code)]
+pub const CONF_LIMITED: i64 = 2;
+#[allow(dead_code)]
+pub const CONF_SECRET: i64 = 3;
+pub const CONF_TOP_SECRET: i64 = 4;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UserPublic {
@@ -21,6 +31,11 @@ pub struct UserPublic {
     pub username: String,
     pub full_name: Option<String>,
     pub role: String,
+    /// مستوى الاطّلاع (Clearance) — مستقل عن الدور: الدور يحكم نوع العملية،
+    /// وهذا يحكم أعلى مستوى سرية وثيقة يمكن للمستخدم رؤيتها. المدير يتجاوزه دائمًا.
+    pub clearance_level: i64,
+    /// القسم — None تعني "موظف مركزي" يرى وثائق كل الأقسام (ضمن حدود تصريحه)
+    pub department_id: Option<String>,
 }
 
 /// الجلسة الحالية — مستخدم واحد فقط في كل لحظة (تطبيق سطح مكتب أحادي المستخدم لكل جهاز)
@@ -113,7 +128,9 @@ pub fn unlock_vault(
     })
 }
 
-/// إنشاء حساب المدير الأول — مسموح فقط إذا لم يوجد أي مستخدم بعد في هذه الخزنة
+/// إنشاء حساب المدير الأول — مسموح فقط إذا لم يوجد أي مستخدم بعد في هذه الخزنة.
+/// المدير يُنشأ دائمًا بأعلى مستوى اطّلاع (4) — الدور نفسه يتجاوز فحص الاطّلاع أصلًا،
+/// لكن تخزينه بشكل صريح أنظف للعرض والتدقيق.
 #[tauri::command]
 pub fn create_admin(
     db: State<DbState>,
@@ -144,9 +161,9 @@ pub fn create_admin(
     let now = Utc::now().timestamp();
 
     conn.execute(
-        "INSERT INTO users (id, username, password_hash, role, full_name, created_at)
-         VALUES (?1, ?2, ?3, 'admin', ?4, ?5)",
-        params![id, username, hash, full_name, now],
+        "INSERT INTO users (id, username, password_hash, role, full_name, created_at, clearance_level)
+         VALUES (?1, ?2, ?3, 'admin', ?4, ?5, ?6)",
+        params![id, username, hash, full_name, now, CONF_TOP_SECRET],
     )?;
     sync_store::log_local_event(
         conn,
@@ -155,7 +172,8 @@ pub fn create_admin(
         "upsert",
         &serde_json::json!({
             "id": id, "username": username, "password_hash": hash, "role": "admin",
-            "full_name": full_name, "department": null, "created_at": now, "is_active": 1
+            "full_name": full_name, "department_id": null, "clearance_level": CONF_TOP_SECRET,
+            "created_at": now, "is_active": 1
         }),
     )?;
 
@@ -164,11 +182,14 @@ pub fn create_admin(
         username,
         full_name,
         role: ROLE_ADMIN.into(),
+        clearance_level: CONF_TOP_SECRET,
+        department_id: None,
     })
 }
 
-/// إنشاء مستخدم جديد بدور محدد — للمدير فقط
+/// إنشاء مستخدم جديد بدور وتصريح اطّلاع وقسم محدَّدين — للمدير فقط
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn create_user(
     db: State<DbState>,
     session: State<SessionState>,
@@ -177,7 +198,8 @@ pub fn create_user(
     password: String,
     full_name: Option<String>,
     role: String,
-    department: Option<String>,
+    department_id: Option<String>,
+    clearance_level: Option<i64>,
 ) -> Result<UserPublic, ArchiveError> {
     require_role(&session, &[ROLE_ADMIN])?;
 
@@ -189,6 +211,7 @@ pub fn create_user(
             "كلمة المرور يجب أن تكون 8 أحرف على الأقل".into(),
         ));
     }
+    let clearance = clearance_level.unwrap_or(CONF_NORMAL).clamp(CONF_NORMAL, CONF_TOP_SECRET);
 
     let guard = db.0.lock().unwrap();
     let conn = guard
@@ -200,9 +223,9 @@ pub fn create_user(
     let now = Utc::now().timestamp();
 
     conn.execute(
-        "INSERT INTO users (id, username, password_hash, role, full_name, department, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-        params![id, username, hash, role, full_name, department, now],
+        "INSERT INTO users (id, username, password_hash, role, full_name, created_at, department_id, clearance_level)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+        params![id, username, hash, role, full_name, now, department_id, clearance],
     ).map_err(|e| {
         if e.to_string().contains("UNIQUE") {
             ArchiveError::Invalid("اسم المستخدم مستخدَم بالفعل".into())
@@ -218,12 +241,13 @@ pub fn create_user(
         "upsert",
         &serde_json::json!({
             "id": id, "username": username, "password_hash": hash, "role": role,
-            "full_name": full_name, "department": department, "created_at": now, "is_active": 1
+            "full_name": full_name, "department_id": department_id, "clearance_level": clearance,
+            "created_at": now, "is_active": 1
         }),
     )?;
     sync.poke();
 
-    Ok(UserPublic { id, username, full_name, role })
+    Ok(UserPublic { id, username, full_name, role, clearance_level: clearance, department_id })
 }
 
 #[tauri::command]
@@ -238,17 +262,17 @@ pub fn login(
         .as_ref()
         .ok_or_else(|| ArchiveError::Invalid("الخزنة مقفلة".into()))?;
 
-    let row: Option<(String, String, String, Option<String>, String, i64)> = conn
+    let row: Option<(String, String, String, Option<String>, String, i64, i64, Option<String>)> = conn
         .query_row(
-            "SELECT id, username, password_hash, full_name, role, is_active FROM users WHERE username = ?1",
+            "SELECT id, username, password_hash, full_name, role, is_active, clearance_level, department_id
+             FROM users WHERE username = ?1",
             params![username],
-            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?, r.get(5)?)),
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?, r.get(5)?, r.get(6)?, r.get(7)?)),
         )
         .optional()?;
 
-    let (id, username, hash, full_name, role, is_active) = row.ok_or_else(|| {
-        ArchiveError::Invalid("اسم مستخدم أو كلمة مرور خاطئة".into())
-    })?;
+    let (id, username, hash, full_name, role, is_active, clearance_level, department_id) = row
+        .ok_or_else(|| ArchiveError::Invalid("اسم مستخدم أو كلمة مرور خاطئة".into()))?;
 
     if is_active == 0 {
         return Err(ArchiveError::Invalid("هذا الحساب مُعطَّل — راجع المدير".into()));
@@ -257,7 +281,7 @@ pub fn login(
         return Err(ArchiveError::Invalid("اسم مستخدم أو كلمة مرور خاطئة".into()));
     }
 
-    let user = UserPublic { id, username, full_name, role };
+    let user = UserPublic { id, username, full_name, role, clearance_level, department_id };
     *session.0.lock().unwrap() = Some(user.clone());
     Ok(user)
 }
@@ -289,4 +313,11 @@ pub fn require_role(
         ));
     }
     Ok(user)
+}
+
+/// المدير (admin) يتجاوز فلترة القسم ومستوى الاطّلاع بالكامل ويرى كل شيء —
+/// الاستعلامات في documents.rs تتحقق من هذا وتبني شرط SQL إضافيًا لغيره:
+/// confidentiality_level <= <تصريحه> AND (<قسمه> IS NULL OR department_id IS NULL OR department_id = <قسمه>)
+pub fn bypasses_visibility_filter(role: &str) -> bool {
+    role == ROLE_ADMIN
 }

@@ -34,11 +34,21 @@ fn main() {
             commands::documents::get_document_file,
             commands::documents::delete_document,
             commands::documents::ocr_status,
+            commands::documents::update_document_status,
             // الفئات
             commands::categories::add_category,
             commands::categories::list_categories,
             commands::categories::delete_category,
             commands::categories::list_documents_by_category,
+            // الأقسام (الهيكل التنظيمي)
+            commands::departments::add_department,
+            commands::departments::list_departments,
+            commands::departments::delete_department,
+            // أنواع الوثائق
+            commands::document_types::add_document_type,
+            commands::document_types::list_document_types,
+            commands::document_types::delete_document_type,
+            commands::document_types::suggested_document_types,
             // المزامنة
             commands::sync::sync_status,
             commands::sync::has_users,

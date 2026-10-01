@@ -1,4 +1,4 @@
-use rusqlite::Connection;
+use rusqlite::{params, Connection};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
@@ -9,21 +9,53 @@ pub struct DbState(pub Arc<Mutex<Option<Connection>>>);
 /// — لا يُكتب على القرص أبدًا بصيغته الصافية
 pub struct VaultKeyState(pub Arc<Mutex<Option<[u8; 32]>>>);
 
-const SCHEMA: &str = include_str!("schema.sql");
-
 pub fn db_path(app_data_dir: &PathBuf) -> PathBuf {
     app_data_dir.join("archive.db")
 }
 
-/// هل توجد خزنة (قاعدة بيانات) على هذا الجهاز أصلًا؟ يحدد الواجهة الأمامية
-/// إن كانت تعرض شاشة "إنشاء عبارة سرية" أو "أدخل العبارة السرية"
+/// هل توجد خزنة (قاعدة بيانات) على هذا الجهاز أصلًا؟
 pub fn vault_exists(app_data_dir: &PathBuf) -> bool {
     db_path(app_data_dir).exists()
 }
 
+// ============================================================
+// نظام إصدارات المخطط (Schema Migrations)
+//
+// كل تغيير مستقبلي على المخطط يضاف كملف SQL مرقَّم جديد هنا، لا كتعديل
+// على ملفات موجودة — الأرشيف قد يحمل بيانات حقيقية، وتعديل migration
+// طُبِّق فعلًا على أجهزة أخرى يكسر التقارب بين الأجهزة. `schema_version`
+// يضمن أن كل migration يُطبَّق مرة واحدة فقط بترتيب صارم على كل جهاز.
+// ============================================================
+
+struct Migration {
+    version: i32,
+    sql: &'static str,
+}
+
+const MIGRATIONS: &[Migration] = &[
+    Migration { version: 1, sql: include_str!("migrations/0001_initial.sql") },
+    Migration { version: 2, sql: include_str!("migrations/0002_org_structure.sql") },
+];
+
+pub fn apply_migrations(conn: &Connection) -> rusqlite::Result<()> {
+    conn.execute_batch("CREATE TABLE IF NOT EXISTS schema_version (version INTEGER PRIMARY KEY);")?;
+    let current: i32 = conn.query_row(
+        "SELECT COALESCE(MAX(version), 0) FROM schema_version",
+        [],
+        |r| r.get(0),
+    )?;
+    for m in MIGRATIONS {
+        if m.version > current {
+            conn.execute_batch(m.sql)?;
+            conn.execute("INSERT INTO schema_version (version) VALUES (?1)", params![m.version])?;
+        }
+    }
+    Ok(())
+}
+
 /// يفتح قاعدة بيانات مشفّرة بـ SQLCipher بالعبارة السرية المعطاة.
-/// ينشئ القاعدة والمخطط تلقائيًا إن لم تكن موجودة (أول تشغيل على هذا الجهاز).
-/// عبارة سرية خاطئة على قاعدة موجودة تُسبب فشل execute_batch (القاعدة تبدو تالفة لأنها ما تزال مشفّرة).
+/// ينشئ القاعدة والمخطط تلقائيًا إن لم تكن موجودة (أول تشغيل)، ويرفع أي قاعدة
+/// موجودة تدريجيًا لآخر إصدار مخطط معروف عبر apply_migrations.
 pub fn open_encrypted_db(app_data_dir: &PathBuf, passphrase: &str) -> rusqlite::Result<Connection> {
     std::fs::create_dir_all(app_data_dir).expect("فشل إنشاء مجلد بيانات التطبيق");
     let conn = Connection::open(db_path(app_data_dir))?;
@@ -34,12 +66,12 @@ pub fn open_encrypted_db(app_data_dir: &PathBuf, passphrase: &str) -> rusqlite::
     conn.pragma_update(None, "foreign_keys", "ON")?;
 
     // أول استعلام حقيقي: ينجح فقط إذا كانت العبارة السرية صحيحة
-    conn.execute_batch(SCHEMA)?;
+    apply_migrations(&conn)?;
 
     Ok(conn)
 }
 
-/// مجلد الخزنة حيث تُخزَّن الملفات الفعلية (مشفّرة بـ AES-256-GCM لاحقًا)
+/// مجلد الخزنة حيث تُخزَّن الملفات الفعلية (مشفّرة بـ AES-256-GCM)
 pub fn vault_dir(app_data_dir: &PathBuf) -> PathBuf {
     let dir = app_data_dir.join("vault");
     std::fs::create_dir_all(&dir).expect("فشل إنشاء مجلد الخزنة");

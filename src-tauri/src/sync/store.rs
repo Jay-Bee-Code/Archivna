@@ -202,7 +202,10 @@ pub fn apply_remote_events(
 }
 
 fn apply_one(conn: &Connection, ev: &SyncEvent, vault_dir: &Path) -> Result<bool, SyncError> {
-    if !matches!(ev.entity_type.as_str(), "document" | "category" | "user")
+    if !matches!(
+        ev.entity_type.as_str(),
+        "document" | "category" | "user" | "department" | "document_type"
+    )
         || !matches!(ev.operation.as_str(), "upsert" | "delete")
     {
         return Err(SyncError::Protocol("نوع حدث غير معروف".into()));
@@ -294,11 +297,15 @@ fn apply_state(tx: &Connection, ev: &SyncEvent, vault_dir: &Path) -> Result<(), 
             tx.execute(
                 "INSERT INTO documents
                     (id, title, category_id, file_hash, file_path, file_size, mime_type, ocr_text,
+                     department_id, document_type_id, registry_number, confidentiality_level, status, metadata,
                      created_by, created_at, updated_at, origin_node_id, is_deleted)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)
                  ON CONFLICT(id) DO UPDATE SET
                     title = excluded.title, category_id = excluded.category_id,
                     ocr_text = excluded.ocr_text,
+                    department_id = excluded.department_id, document_type_id = excluded.document_type_id,
+                    confidentiality_level = excluded.confidentiality_level, status = excluded.status,
+                    metadata = excluded.metadata,
                     updated_at = excluded.updated_at, is_deleted = excluded.is_deleted",
                 params![
                     id,
@@ -309,6 +316,12 @@ fn apply_state(tx: &Connection, ev: &SyncEvent, vault_dir: &Path) -> Result<(), 
                     int_field(p, "file_size"),
                     opt_str(p, "mime_type"),
                     opt_str(p, "ocr_text"),
+                    opt_str(p, "department_id"),
+                    opt_str(p, "document_type_id"),
+                    opt_str(p, "registry_number"),
+                    p.get("confidentiality_level").and_then(|v| v.as_i64()).unwrap_or(1),
+                    p.get("status").and_then(|v| v.as_str()).unwrap_or("approved").to_string(),
+                    opt_str(p, "metadata"),
                     opt_str(p, "created_by"),
                     int_field(p, "created_at"),
                     p.get("updated_at").and_then(|v| v.as_i64()),
@@ -316,6 +329,39 @@ fn apply_state(tx: &Connection, ev: &SyncEvent, vault_dir: &Path) -> Result<(), 
                     int_field(p, "is_deleted"),
                 ],
             )?;
+        }
+        ("department", "upsert") => {
+            tx.execute(
+                "INSERT INTO departments (id, name_ar, name_fr, code, parent_id, head_user_id, is_active, created_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+                 ON CONFLICT(id) DO UPDATE SET
+                    name_ar = excluded.name_ar, name_fr = excluded.name_fr, code = excluded.code,
+                    parent_id = excluded.parent_id, head_user_id = excluded.head_user_id,
+                    is_active = excluded.is_active",
+                params![
+                    id,
+                    str_field(p, "name_ar")?,
+                    opt_str(p, "name_fr"),
+                    opt_str(p, "code"),
+                    opt_str(p, "parent_id"),
+                    opt_str(p, "head_user_id"),
+                    p.get("is_active").and_then(|v| v.as_i64()).unwrap_or(1),
+                    int_field(p, "created_at"),
+                ],
+            )?;
+        }
+        ("department", "delete") => {
+            tx.execute("UPDATE departments SET is_active = 0 WHERE id = ?1", params![id])?;
+        }
+        ("document_type", "upsert") => {
+            tx.execute(
+                "INSERT INTO document_types (id, name, created_at) VALUES (?1, ?2, ?3)
+                 ON CONFLICT(id) DO UPDATE SET name = excluded.name",
+                params![id, str_field(p, "name")?, int_field(p, "created_at")],
+            )?;
+        }
+        ("document_type", "delete") => {
+            tx.execute("DELETE FROM document_types WHERE id = ?1", params![id])?;
         }
         ("document", "delete") => {
             tx.execute(
@@ -327,19 +373,21 @@ fn apply_state(tx: &Connection, ev: &SyncEvent, vault_dir: &Path) -> Result<(), 
             let username = resolve_username(tx, id, &str_field(p, "username")?)?;
             tx.execute(
                 "INSERT INTO users
-                    (id, username, password_hash, role, full_name, department, created_at, is_active)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+                    (id, username, password_hash, role, full_name, department_id, clearance_level, created_at, is_active)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
                  ON CONFLICT(id) DO UPDATE SET
                     username = excluded.username, password_hash = excluded.password_hash,
                     role = excluded.role, full_name = excluded.full_name,
-                    department = excluded.department, is_active = excluded.is_active",
+                    department_id = excluded.department_id, clearance_level = excluded.clearance_level,
+                    is_active = excluded.is_active",
                 params![
                     id,
                     username,
                     str_field(p, "password_hash")?,
                     str_field(p, "role")?,
                     opt_str(p, "full_name"),
-                    opt_str(p, "department"),
+                    opt_str(p, "department_id"),
+                    p.get("clearance_level").and_then(|v| v.as_i64()).unwrap_or(1),
                     int_field(p, "created_at"),
                     p.get("is_active").and_then(|v| v.as_i64()).unwrap_or(1),
                 ],

@@ -123,32 +123,35 @@ pub fn delete_category(
     Ok(())
 }
 
-/// جلب وثائق فئة معيّنة (للفلترة) — لأي مستخدم مسجَّل دخوله
+/// جلب وثائق فئة معيّنة (للفلترة)، مقيَّدة بنفس قواعد رؤية القسم والاطّلاع
 #[tauri::command]
 pub fn list_documents_by_category(
     db: State<DbState>,
     session: State<SessionState>,
     category_id: String,
 ) -> Result<Vec<crate::commands::documents::Document>, ArchiveError> {
-    require_role(&session, &[ROLE_ADMIN, ROLE_ARCHIVIST, ROLE_REVIEWER, ROLE_VIEWER])?;
-    use crate::commands::documents::Document;
+    use crate::commands::auth::bypasses_visibility_filter;
+    use crate::commands::documents::{row_to_document, visibility_sql, DOC_COLUMNS};
+    let user = require_role(&session, &[ROLE_ADMIN, ROLE_ARCHIVIST, ROLE_REVIEWER, ROLE_VIEWER])?;
 
     let guard = require_conn!(db);
     let conn = guard.as_ref().unwrap();
-    let mut stmt = conn.prepare(
-        "SELECT id, title, category_id, file_hash, file_size, mime_type, created_at, updated_at,
-                (ocr_text IS NOT NULL AND ocr_text <> '')
-         FROM documents WHERE category_id = ?1 AND is_deleted = 0 ORDER BY created_at DESC",
-    )?;
-    let docs = stmt
-        .query_map(params![category_id], |row| {
-            Ok(Document {
-                id: row.get(0)?, title: row.get(1)?, category_id: row.get(2)?,
-                file_hash: row.get(3)?, file_size: row.get(4)?, mime_type: row.get(5)?,
-                created_at: row.get(6)?, updated_at: row.get(7)?, has_ocr: row.get(8)?,
-            })
-        })?
+    let sql = format!(
+        "SELECT {DOC_COLUMNS} FROM documents WHERE category_id = :cat AND is_deleted = 0{} ORDER BY created_at DESC",
+        visibility_sql(&user.role)
+    );
+    let mut stmt = conn.prepare(&sql)?;
+    let docs = if bypasses_visibility_filter(&user.role) {
+        stmt.query_map(rusqlite::named_params! { ":cat": category_id }, row_to_document)?
+            .filter_map(Result::ok)
+            .collect()
+    } else {
+        stmt.query_map(
+            rusqlite::named_params! { ":cat": category_id, ":A": user.clearance_level, ":B": user.department_id },
+            row_to_document,
+        )?
         .filter_map(Result::ok)
-        .collect();
+        .collect()
+    };
     Ok(docs)
 }

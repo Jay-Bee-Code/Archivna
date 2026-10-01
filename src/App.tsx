@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { api, Document, Category, UserPublic, fileToBase64, errorMessage } from "./lib/api";
+import { api, Document, Category, UserPublic, errorMessage } from "./lib/api";
 import DocumentCard from "./components/DocumentCard";
 import CategorySidebar from "./components/CategorySidebar";
 import VaultUnlock from "./components/VaultUnlock";
@@ -9,6 +9,8 @@ import LoginScreen from "./components/LoginScreen";
 import NetworkStatus from "./components/NetworkStatus";
 import EmptyState from "./components/EmptyState";
 import Logo from "./components/Logo";
+import UploadModal from "./components/UploadModal";
+import OrgSettingsPanel from "./components/OrgSettingsPanel";
 
 type Stage = "checking" | "unlock" | "setup-admin" | "sync-setup" | "login" | "ready";
 
@@ -72,23 +74,18 @@ function Archive({ user, onLogout }: { user: UserPublic; onLogout: () => void })
     return () => clearTimeout(timeout);
   }, [loadDocuments]);
 
-  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [showOrgSettings, setShowOrgSettings] = useState(false);
+
+  function handlePickFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const base64 = await fileToBase64(file);
-      await api.addDocument({
-        title: file.name,
-        category_id: activeCategory,
-        file_base64: base64,
-        mime_type: file.type || null,
-      });
-      await Promise.all([loadDocuments(), loadCategories()]);
-    } catch (err) {
-      setError(errorMessage(err));
-    } finally {
-      e.target.value = "";
-    }
+    if (file) setPendingFile(file);
+    e.target.value = "";
+  }
+
+  async function handleUploaded() {
+    setPendingFile(null);
+    await Promise.all([loadDocuments(), loadCategories()]);
   }
 
   async function handleDelete(id: string) {
@@ -126,6 +123,15 @@ function Archive({ user, onLogout }: { user: UserPublic; onLogout: () => void })
               {ROLE_LABELS[user.role] || user.role}
             </span>
           </div>
+          {user.role === "admin" && (
+            <button
+              onClick={() => setShowOrgSettings(true)}
+              className="text-xs text-text-secondary dark:text-white/50 hover:text-primary dark:hover:text-white transition-colors"
+              title="الهيكل التنظيمي وأنواع الوثائق"
+            >
+              ⚙️ الإعدادات
+            </button>
+          )}
           <button
             onClick={onLogout}
             className="text-xs text-text-secondary dark:text-white/50 hover:text-danger dark:hover:text-danger transition-colors"
@@ -146,7 +152,7 @@ function Archive({ user, onLogout }: { user: UserPublic; onLogout: () => void })
                 </svg>
                 رفع وثيقة جديدة
               </span>
-              <input type="file" onChange={handleUpload} className="sr-only" />
+              <input type="file" onChange={handlePickFile} className="sr-only" />
             </label>
           )}
           {canWrite && ocrAvailable === false && (
@@ -206,6 +212,18 @@ function Archive({ user, onLogout }: { user: UserPublic; onLogout: () => void })
           )}
         </main>
       </div>
+
+      {pendingFile && (
+        <UploadModal
+          file={pendingFile}
+          categories={categories}
+          defaultCategoryId={activeCategory}
+          defaultDepartmentId={user.department_id}
+          onClose={() => setPendingFile(null)}
+          onUploaded={handleUploaded}
+        />
+      )}
+      {showOrgSettings && <OrgSettingsPanel onClose={() => setShowOrgSettings(false)} />}
     </div>
   );
 }

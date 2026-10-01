@@ -10,6 +10,11 @@ export interface Document {
   created_at: number;
   updated_at: number | null;
   has_ocr: boolean;
+  department_id: string | null;
+  document_type_id: string | null;
+  registry_number: string | null;
+  confidentiality_level: number;
+  status: string;
 }
 
 export interface NewDocumentInput {
@@ -17,7 +22,49 @@ export interface NewDocumentInput {
   category_id: string | null;
   file_base64: string;
   mime_type: string | null;
+  departmentId: string | null;
+  documentTypeId: string | null;
+  confidentialityLevel: number | null;
 }
+
+export interface Department {
+  id: string;
+  name_ar: string;
+  name_fr: string | null;
+  code: string | null;
+  parent_id: string | null;
+  head_user_id: string | null;
+  is_active: boolean;
+  created_at: number;
+}
+
+export interface NewDepartmentInput {
+  name_ar: string;
+  name_fr: string | null;
+  code: string | null;
+  parent_id: string | null;
+}
+
+export interface DocumentType {
+  id: string;
+  name: string;
+  created_at: number;
+}
+
+export const CONFIDENTIALITY_LABELS: Record<number, string> = {
+  1: "عادي",
+  2: "محدود التداول",
+  3: "سري",
+  4: "سري جدًا",
+};
+
+export const STATUS_LABELS: Record<string, string> = {
+  draft: "مسودة",
+  in_review: "قيد المراجعة",
+  approved: "معتمدة",
+  archived: "مؤرشفة",
+  superseded: "ملغاة/مستبدلة",
+};
 
 export interface Category {
   id: string;
@@ -57,6 +104,8 @@ export interface UserPublic {
   username: string;
   full_name: string | null;
   role: Role;
+  clearance_level: number;
+  department_id: string | null;
 }
 
 export const api = {
@@ -71,7 +120,8 @@ export const api = {
     password: string;
     fullName: string | null;
     role: Role;
-    department: string | null;
+    departmentId: string | null;
+    clearanceLevel: number | null;
   }) => invoke<UserPublic>("create_user", input),
   login: (username: string, password: string) =>
     invoke<UserPublic>("login", { username, password }),
@@ -94,6 +144,21 @@ export const api = {
 
   // OCR
   ocrStatus: () => invoke<boolean>("ocr_status"),
+
+  // الأقسام
+  addDepartment: (input: NewDepartmentInput) => invoke<Department>("add_department", { input }),
+  listDepartments: () => invoke<Department[]>("list_departments"),
+  deleteDepartment: (id: string) => invoke<void>("delete_department", { id }),
+
+  // أنواع الوثائق
+  addDocumentType: (name: string) => invoke<DocumentType>("add_document_type", { name }),
+  listDocumentTypes: () => invoke<DocumentType[]>("list_document_types"),
+  deleteDocumentType: (id: string) => invoke<void>("delete_document_type", { id }),
+  suggestedDocumentTypes: () => invoke<string[]>("suggested_document_types"),
+
+  // دورة حياة الوثيقة
+  updateDocumentStatus: (id: string, status: string) =>
+    invoke<void>("update_document_status", { id, status }),
 
   // المزامنة
   syncStatus: () => invoke<SyncStatus>("sync_status"),
