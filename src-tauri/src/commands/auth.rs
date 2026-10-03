@@ -14,6 +14,7 @@ pub const ROLE_ADMIN: &str = "admin";
 pub const ROLE_ARCHIVIST: &str = "archivist";
 pub const ROLE_REVIEWER: &str = "reviewer";
 pub const ROLE_VIEWER: &str = "viewer";
+pub const ALL_ROLES: &[&str] = &[ROLE_ADMIN, ROLE_ARCHIVIST, ROLE_REVIEWER, ROLE_VIEWER];
 
 /// مستويات السرية — راجع migrations/0002_org_structure.sql
 pub const CONF_NORMAL: i64 = 1;

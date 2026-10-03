@@ -22,6 +22,7 @@ base64 = "0.22"
 aes-gcm = "0.10"
 argon2 = { version = "0.5", features = ["password-hash"] }
 rand = "0.8"
+qrcode = "0.14"
 
 # المزامنة عبر الشبكة المحلية (Phase 4)
 mdns-sd = "0.11"

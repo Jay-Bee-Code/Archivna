@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Document, api, downloadBase64, errorMessage, CONFIDENTIALITY_LABELS, STATUS_LABELS } from "../lib/api";
+import { Document, api, downloadBase64, errorMessage, CONFIDENTIALITY_LABELS, STATUS_LABELS, PHYSICAL_STATUS_LABELS } from "../lib/api";
+import QrModal from "./QrModal";
 
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} بايت`;
@@ -33,6 +34,7 @@ export default function DocumentCard({
 }) {
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showQr, setShowQr] = useState(false);
 
   async function handleDownload() {
     setDownloading(true);
@@ -105,6 +107,19 @@ export default function DocumentCard({
               {STATUS_LABELS[doc.status] || doc.status}
             </span>
           )}
+          {doc.legal_hold && (
+            <span
+              className="text-[11px] px-2 py-0.5 rounded-full bg-warning/15 text-warning"
+              title="مجمَّدة قانونيًا — لا يمكن إتلافها"
+            >
+              ⚖️ مجمَّدة
+            </span>
+          )}
+          {doc.physical_status !== "none" && (
+            <span className="text-[11px] px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/5 text-text-secondary dark:text-white/60">
+              📦 {PHYSICAL_STATUS_LABELS[doc.physical_status] || doc.physical_status}
+            </span>
+          )}
           {doc.has_ocr && (
             <span
               className="text-[11px] px-2 py-0.5 rounded-full bg-accent/10 text-accent"
@@ -114,16 +129,25 @@ export default function DocumentCard({
             </span>
           )}
         </div>
-        <button
-          onClick={handleDownload}
-          disabled={downloading}
-          className="text-xs text-accent hover:text-primary dark:hover:text-white font-medium disabled:opacity-50 transition-colors"
-        >
-          {downloading ? "جارٍ فك التشفير…" : "تنزيل ↓"}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowQr(true)}
+            className="text-xs text-text-secondary dark:text-white/50 hover:text-accent transition-colors"
+          >
+            QR
+          </button>
+          <button
+            onClick={handleDownload}
+            disabled={downloading}
+            className="text-xs text-accent hover:text-primary dark:hover:text-white font-medium disabled:opacity-50 transition-colors"
+          >
+            {downloading ? "جارٍ فك التشفير…" : "تنزيل ↓"}
+          </button>
+        </div>
       </div>
 
       {error && <p className="text-xs text-danger">{error}</p>}
+      {showQr && <QrModal documentId={doc.id} title={doc.title} onClose={() => setShowQr(false)} />}
     </div>
   );
 }

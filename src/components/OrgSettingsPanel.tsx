@@ -81,6 +81,16 @@ export default function OrgSettingsPanel({ onClose }: { onClose: () => void }) {
     }
   }
 
+  async function handleSetRetention(id: string, value: string) {
+    const years = value.trim() === "" ? null : Number(value);
+    try {
+      await api.setDocumentTypeRetention(id, years);
+      refresh();
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }
+
   const rowClass =
     "flex items-center justify-between gap-2 text-sm px-3 py-2 rounded-lg bg-black/[0.02] dark:bg-white/[0.03]";
   const inputClass =
@@ -129,12 +139,24 @@ export default function OrgSettingsPanel({ onClose }: { onClose: () => void }) {
             )}
             {types.map((t) => (
               <div key={t.id} className={rowClass}>
-                <span className="truncate text-text-primary dark:text-white">{t.name}</span>
+                <span className="truncate text-text-primary dark:text-white flex-1">{t.name}</span>
+                <input
+                  type="number"
+                  min={1}
+                  defaultValue={t.retention_years ?? ""}
+                  onBlur={(e) => handleSetRetention(t.id, e.target.value)}
+                  placeholder="دائم"
+                  title="مدة الاحتفاظ بالسنوات (اتركه فارغًا = دائم)"
+                  className="w-16 text-xs px-1.5 py-1 rounded-md border border-border-light dark:border-white/10 bg-white dark:bg-white/5 dark:text-white text-center"
+                />
                 <button onClick={() => handleDeleteType(t.id)} className="text-danger/70 hover:text-danger text-xs shrink-0">
                   حذف
                 </button>
               </div>
             ))}
+            <p className="text-[10px] text-text-secondary dark:text-white/30">
+              الرقم بجانب كل نوع = مدة الاحتفاظ بالسنوات (فارغ = دائم، لا إتلاف تلقائي أبدًا)
+            </p>
             <form onSubmit={handleAddType} className="flex gap-1.5 mt-1">
               <input value={newTypeName} onChange={(e) => setNewTypeName(e.target.value)} placeholder="اسم النوع" className={inputClass} />
               <button type="submit" className="shrink-0 text-xs px-3 rounded-lg bg-accent text-white hover:bg-primary">+</button>

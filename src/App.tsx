@@ -11,6 +11,7 @@ import EmptyState from "./components/EmptyState";
 import Logo from "./components/Logo";
 import UploadModal from "./components/UploadModal";
 import OrgSettingsPanel from "./components/OrgSettingsPanel";
+import RetentionPanel from "./components/RetentionPanel";
 
 type Stage = "checking" | "unlock" | "setup-admin" | "sync-setup" | "login" | "ready";
 
@@ -76,6 +77,7 @@ function Archive({ user, onLogout }: { user: UserPublic; onLogout: () => void })
 
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [showOrgSettings, setShowOrgSettings] = useState(false);
+  const [showRetention, setShowRetention] = useState(false);
 
   function handlePickFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -124,13 +126,22 @@ function Archive({ user, onLogout }: { user: UserPublic; onLogout: () => void })
             </span>
           </div>
           {user.role === "admin" && (
-            <button
-              onClick={() => setShowOrgSettings(true)}
-              className="text-xs text-text-secondary dark:text-white/50 hover:text-primary dark:hover:text-white transition-colors"
-              title="الهيكل التنظيمي وأنواع الوثائق"
-            >
-              ⚙️ الإعدادات
-            </button>
+            <>
+              <button
+                onClick={() => setShowOrgSettings(true)}
+                className="text-xs text-text-secondary dark:text-white/50 hover:text-primary dark:hover:text-white transition-colors"
+                title="الهيكل التنظيمي وأنواع الوثائق"
+              >
+                ⚙️ الإعدادات
+              </button>
+              <button
+                onClick={() => setShowRetention(true)}
+                className="text-xs text-text-secondary dark:text-white/50 hover:text-primary dark:hover:text-white transition-colors"
+                title="الاحتفاظ والإتلاف"
+              >
+                ♻️ الإتلاف
+              </button>
+            </>
           )}
           <button
             onClick={onLogout}
@@ -224,6 +235,7 @@ function Archive({ user, onLogout }: { user: UserPublic; onLogout: () => void })
         />
       )}
       {showOrgSettings && <OrgSettingsPanel onClose={() => setShowOrgSettings(false)} />}
+      {showRetention && <RetentionPanel onClose={() => setShowRetention(false)} />}
     </div>
   );
 }

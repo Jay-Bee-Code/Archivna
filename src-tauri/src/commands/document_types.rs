@@ -13,6 +13,7 @@ pub struct DocumentType {
     pub id: String,
     pub name: String,
     pub created_at: i64,
+    pub retention_years: Option<i64>,
 }
 
 macro_rules! require_conn {
@@ -64,7 +65,7 @@ pub fn add_document_type(
     )?;
     sync.poke();
 
-    Ok(DocumentType { id, name, created_at: now })
+    Ok(DocumentType { id, name, created_at: now, retention_years: None })
 }
 
 #[tauri::command]
@@ -76,9 +77,11 @@ pub fn list_document_types(
     let guard = require_conn!(db);
     let conn = guard.as_ref().unwrap();
 
-    let mut stmt = conn.prepare("SELECT id, name, created_at FROM document_types ORDER BY name ASC")?;
+    let mut stmt = conn.prepare("SELECT id, name, created_at, retention_years FROM document_types ORDER BY name ASC")?;
     let types = stmt
-        .query_map([], |row| Ok(DocumentType { id: row.get(0)?, name: row.get(1)?, created_at: row.get(2)? }))?
+        .query_map([], |row| {
+            Ok(DocumentType { id: row.get(0)?, name: row.get(1)?, created_at: row.get(2)?, retention_years: row.get(3)? })
+        })?
         .filter_map(Result::ok)
         .collect();
     Ok(types)

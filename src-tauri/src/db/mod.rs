@@ -35,6 +35,7 @@ struct Migration {
 const MIGRATIONS: &[Migration] = &[
     Migration { version: 1, sql: include_str!("migrations/0001_initial.sql") },
     Migration { version: 2, sql: include_str!("migrations/0002_org_structure.sql") },
+    Migration { version: 3, sql: include_str!("migrations/0003_retention_physical.sql") },
 ];
 
 pub fn apply_migrations(conn: &Connection) -> rusqlite::Result<()> {

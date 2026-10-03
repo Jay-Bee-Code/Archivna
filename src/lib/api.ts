@@ -15,6 +15,12 @@ export interface Document {
   registry_number: string | null;
   confidentiality_level: number;
   status: string;
+  legal_hold: boolean;
+  disposed_at: number | null;
+  physical_location: string | null;
+  physical_status: string;
+  borrowed_by: string | null;
+  borrowed_at: number | null;
 }
 
 export interface NewDocumentInput {
@@ -49,6 +55,7 @@ export interface DocumentType {
   id: string;
   name: string;
   created_at: number;
+  retention_years: number | null;
 }
 
 export const CONFIDENTIALITY_LABELS: Record<number, string> = {
@@ -64,7 +71,31 @@ export const STATUS_LABELS: Record<string, string> = {
   approved: "معتمدة",
   archived: "مؤرشفة",
   superseded: "ملغاة/مستبدلة",
+  disposed: "مُتلَفة",
 };
+
+export const PHYSICAL_STATUS_LABELS: Record<string, string> = {
+  none: "لا نسخة ورقية",
+  present: "موجود",
+  borrowed: "معار",
+  missing: "مفقود",
+  destroyed: "متلف ماديًا",
+};
+
+export interface DisposalRecord {
+  id: string;
+  document_id: string;
+  title: string;
+  registry_number: string | null;
+  disposed_by: string | null;
+  disposed_at: number;
+  reason: string | null;
+}
+
+export interface QrResult {
+  svg: string;
+  payload: string;
+}
 
 export interface Category {
   id: string;
@@ -159,6 +190,20 @@ export const api = {
   // دورة حياة الوثيقة
   updateDocumentStatus: (id: string, status: string) =>
     invoke<void>("update_document_status", { id, status }),
+
+  // الاحتفاظ والإتلاف
+  setDocumentTypeRetention: (documentTypeId: string, retentionYears: number | null) =>
+    invoke<void>("set_document_type_retention", { documentTypeId, retentionYears }),
+  setLegalHold: (id: string, hold: boolean) => invoke<void>("set_legal_hold", { id, hold }),
+  listDisposalCandidates: () => invoke<Document[]>("list_disposal_candidates"),
+  disposeDocument: (id: string, reason: string | null) =>
+    invoke<void>("dispose_document", { id, reason }),
+  listDisposalLog: () => invoke<DisposalRecord[]>("list_disposal_log"),
+
+  // الأرشيف الورقي
+  updatePhysical: (id: string, location: string | null, status: string) =>
+    invoke<void>("update_physical", { id, location, status }),
+  getDocumentQr: (id: string) => invoke<QrResult>("get_document_qr", { id }),
 
   // المزامنة
   syncStatus: () => invoke<SyncStatus>("sync_status"),

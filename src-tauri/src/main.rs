@@ -5,6 +5,7 @@ mod commands;
 mod crypto;
 mod db;
 mod ocr;
+mod qr;
 mod sync;
 
 use commands::auth::SessionState;
@@ -49,6 +50,15 @@ fn main() {
             commands::document_types::list_document_types,
             commands::document_types::delete_document_type,
             commands::document_types::suggested_document_types,
+            // الاحتفاظ والإتلاف
+            commands::retention::set_document_type_retention,
+            commands::retention::set_legal_hold,
+            commands::retention::list_disposal_candidates,
+            commands::retention::dispose_document,
+            commands::retention::list_disposal_log,
+            // الأرشيف الورقي
+            commands::physical::update_physical,
+            commands::physical::get_document_qr,
             // المزامنة
             commands::sync::sync_status,
             commands::sync::has_users,

@@ -204,7 +204,7 @@ pub fn apply_remote_events(
 fn apply_one(conn: &Connection, ev: &SyncEvent, vault_dir: &Path) -> Result<bool, SyncError> {
     if !matches!(
         ev.entity_type.as_str(),
-        "document" | "category" | "user" | "department" | "document_type"
+        "document" | "category" | "user" | "department" | "document_type" | "disposal_log"
     )
         || !matches!(ev.operation.as_str(), "upsert" | "delete")
     {
@@ -298,14 +298,18 @@ fn apply_state(tx: &Connection, ev: &SyncEvent, vault_dir: &Path) -> Result<(), 
                 "INSERT INTO documents
                     (id, title, category_id, file_hash, file_path, file_size, mime_type, ocr_text,
                      department_id, document_type_id, registry_number, confidentiality_level, status, metadata,
+                     legal_hold, disposed_at, physical_location, physical_status, borrowed_by, borrowed_at,
                      created_by, created_at, updated_at, origin_node_id, is_deleted)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25)
                  ON CONFLICT(id) DO UPDATE SET
                     title = excluded.title, category_id = excluded.category_id,
                     ocr_text = excluded.ocr_text,
                     department_id = excluded.department_id, document_type_id = excluded.document_type_id,
                     confidentiality_level = excluded.confidentiality_level, status = excluded.status,
                     metadata = excluded.metadata,
+                    legal_hold = excluded.legal_hold, disposed_at = excluded.disposed_at,
+                    physical_location = excluded.physical_location, physical_status = excluded.physical_status,
+                    borrowed_by = excluded.borrowed_by, borrowed_at = excluded.borrowed_at,
                     updated_at = excluded.updated_at, is_deleted = excluded.is_deleted",
                 params![
                     id,
@@ -322,11 +326,47 @@ fn apply_state(tx: &Connection, ev: &SyncEvent, vault_dir: &Path) -> Result<(), 
                     p.get("confidentiality_level").and_then(|v| v.as_i64()).unwrap_or(1),
                     p.get("status").and_then(|v| v.as_str()).unwrap_or("approved").to_string(),
                     opt_str(p, "metadata"),
+                    p.get("legal_hold").and_then(|v| v.as_i64()).unwrap_or(0),
+                    p.get("disposed_at").and_then(|v| v.as_i64()),
+                    opt_str(p, "physical_location"),
+                    p.get("physical_status").and_then(|v| v.as_str()).unwrap_or("none").to_string(),
+                    opt_str(p, "borrowed_by"),
+                    p.get("borrowed_at").and_then(|v| v.as_i64()),
                     opt_str(p, "created_by"),
                     int_field(p, "created_at"),
                     p.get("updated_at").and_then(|v| v.as_i64()),
                     opt_str(p, "origin_node_id").unwrap_or_else(|| ev.origin_node_id.clone()),
                     int_field(p, "is_deleted"),
+                ],
+            )?;
+
+            // إتلاف وصل من جهاز آخر: احذف نسخة هذا الجهاز من الملف أيضًا (إن وصلته أصلًا)،
+            // بنفس شرط عدم وجود وثيقة حيّة أخرى تشير لنفس المحتوى
+            if p.get("disposed_at").and_then(|v| v.as_i64()).is_some() {
+                let other_refs: i64 = tx.query_row(
+                    "SELECT COUNT(*) FROM documents WHERE file_hash = ?1 AND id <> ?2 AND is_deleted = 0",
+                    params![hash, id], |r| r.get(0),
+                )?;
+                if other_refs == 0 {
+                    let _ = std::fs::remove_file(&path); // best-effort — طبيعي ألا يكون الملف وصل لهذا الجهاز أصلًا
+                }
+            }
+        }
+        ("disposal_log", "upsert") => {
+            tx.execute(
+                "INSERT INTO disposal_log (id, document_id, title, registry_number, document_type_id, disposed_by, disposed_at, reason, node_id)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
+                 ON CONFLICT(id) DO NOTHING",
+                params![
+                    id,
+                    str_field(p, "document_id")?,
+                    str_field(p, "title")?,
+                    opt_str(p, "registry_number"),
+                    opt_str(p, "document_type_id"),
+                    opt_str(p, "disposed_by"),
+                    int_field(p, "disposed_at"),
+                    opt_str(p, "reason"),
+                    opt_str(p, "node_id").unwrap_or_else(|| ev.origin_node_id.clone()),
                 ],
             )?;
         }
