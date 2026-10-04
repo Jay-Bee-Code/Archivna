@@ -48,8 +48,13 @@ pub fn extract_text(bytes: &[u8], mime_type: Option<&str>) -> Option<String> {
         output.status.success().then_some(output.stdout)
     };
 
-    // نحاول عربي+إنجليزي أولًا؛ إن لم تكن حزمة "ara" مثبَّتة نتراجع للافتراضي (eng)
-    let stdout = run(Some("ara+eng")).or_else(|| run(None))?;
+    // نحاول عربي+فرنسي+إنجليزي أولًا (الإدارة الجزائرية تستخدم الفرنسية بكثرة
+    // إلى جانب العربية)، ثم نتراجع تدريجيًا حسب حزم اللغات المثبَّتة فعليًا على
+    // هذا الجهاز، وصولًا للافتراضي (eng) إن لم تكن أي حزمة إضافية مثبَّتة
+    let stdout = run(Some("ara+fra+eng"))
+        .or_else(|| run(Some("ara+eng")))
+        .or_else(|| run(Some("fra+eng")))
+        .or_else(|| run(None))?;
     let text = String::from_utf8_lossy(&stdout).trim().to_string();
     if text.is_empty() {
         None

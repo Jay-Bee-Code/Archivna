@@ -18,6 +18,66 @@ function Section({
   );
 }
 
+interface DeptNode extends Department {
+  children: DeptNode[];
+}
+
+/** يبني شجرة من القائمة المسطّحة عبر parent_id — الجذور أولًا، ثم أبناء كل قسم */
+function buildTree(flat: Department[]): DeptNode[] {
+  const byId = new Map<string, DeptNode>(flat.map((d) => [d.id, { ...d, children: [] }]));
+  const roots: DeptNode[] = [];
+  for (const node of byId.values()) {
+    if (node.parent_id && byId.has(node.parent_id)) {
+      byId.get(node.parent_id)!.children.push(node);
+    } else {
+      roots.push(node);
+    }
+  }
+  return roots;
+}
+
+function DeptRow({
+  node,
+  depth,
+  onDelete,
+  onAddChild,
+}: {
+  node: DeptNode;
+  depth: number;
+  onDelete: (id: string) => void;
+  onAddChild: (parentId: string) => void;
+}) {
+  return (
+    <>
+      <div
+        className="flex items-center justify-between gap-2 text-sm px-3 py-2 rounded-lg bg-black/[0.02] dark:bg-white/[0.03]"
+        style={{ marginInlineStart: depth * 18 }}
+      >
+        <span className="truncate text-text-primary dark:text-white flex items-center gap-1.5">
+          {depth > 0 && <span className="text-text-secondary dark:text-white/30">└</span>}
+          {node.name_ar}
+          {node.code && <span className="text-text-secondary dark:text-white/40 text-xs">({node.code})</span>}
+        </span>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => onAddChild(node.id)}
+            className="text-accent hover:text-primary text-xs"
+            title="إضافة قسم فرعي"
+          >
+            + فرعي
+          </button>
+          <button onClick={() => onDelete(node.id)} className="text-danger/70 hover:text-danger text-xs">
+            حذف
+          </button>
+        </div>
+      </div>
+      {node.children.map((c) => (
+        <DeptRow key={c.id} node={c} depth={depth + 1} onDelete={onDelete} onAddChild={onAddChild} />
+      ))}
+    </>
+  );
+}
+
 export default function OrgSettingsPanel({ onClose }: { onClose: () => void }) {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [types, setTypes] = useState<DocumentType[]>([]);
@@ -25,6 +85,7 @@ export default function OrgSettingsPanel({ onClose }: { onClose: () => void }) {
 
   const [newDeptName, setNewDeptName] = useState("");
   const [newDeptCode, setNewDeptCode] = useState("");
+  const [newDeptParent, setNewDeptParent] = useState<string | null>(null);
   const [newTypeName, setNewTypeName] = useState("");
 
   function refresh() {
@@ -41,10 +102,11 @@ export default function OrgSettingsPanel({ onClose }: { onClose: () => void }) {
         name_ar: newDeptName.trim(),
         name_fr: null,
         code: newDeptCode.trim() || null,
-        parent_id: null,
+        parent_id: newDeptParent,
       });
       setNewDeptName("");
       setNewDeptCode("");
+      setNewDeptParent(null);
       refresh();
     } catch (err) {
       setError(errorMessage(err));
@@ -116,16 +178,24 @@ export default function OrgSettingsPanel({ onClose }: { onClose: () => void }) {
             {departments.length === 0 && (
               <p className="text-xs text-text-secondary dark:text-white/40">لا أقسام بعد.</p>
             )}
-            {departments.map((d) => (
-              <div key={d.id} className={rowClass}>
-                <span className="truncate text-text-primary dark:text-white">
-                  {d.name_ar} {d.code && <span className="text-text-secondary dark:text-white/40">({d.code})</span>}
-                </span>
-                <button onClick={() => handleDeleteDept(d.id)} className="text-danger/70 hover:text-danger text-xs shrink-0">
-                  حذف
-                </button>
-              </div>
+            {buildTree(departments).map((node) => (
+              <DeptRow
+                key={node.id}
+                node={node}
+                depth={0}
+                onDelete={handleDeleteDept}
+                onAddChild={(parentId) => setNewDeptParent(parentId)}
+              />
             ))}
+
+            {newDeptParent && (
+              <p className="text-[11px] text-accent flex items-center justify-between">
+                قسم فرعي من: {departments.find((d) => d.id === newDeptParent)?.name_ar}
+                <button type="button" onClick={() => setNewDeptParent(null)} className="text-text-secondary hover:text-danger">
+                  إلغاء
+                </button>
+              </p>
+            )}
             <form onSubmit={handleAddDept} className="flex gap-1.5 mt-1">
               <input value={newDeptName} onChange={(e) => setNewDeptName(e.target.value)} placeholder="اسم القسم" className={inputClass} />
               <input value={newDeptCode} onChange={(e) => setNewDeptCode(e.target.value)} placeholder="الرمز" className="w-20 text-sm px-2 py-2 rounded-lg border border-border-light dark:border-white/10 bg-white dark:bg-white/5 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent" />

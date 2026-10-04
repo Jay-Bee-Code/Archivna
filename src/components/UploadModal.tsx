@@ -8,6 +8,7 @@ import {
   fileToBase64,
   errorMessage,
 } from "../lib/api";
+import { flattenDeptTree, deptIndent } from "../lib/deptTree";
 
 export default function UploadModal({
   file,
@@ -126,8 +127,8 @@ export default function UploadModal({
               className={selectClass}
             >
               <option value="">بلا قسم (مركزي)</option>
-              {departments.map((d) => (
-                <option key={d.id} value={d.id}>{d.name_ar}</option>
+              {flattenDeptTree(departments).map(({ dept, depth }) => (
+                <option key={dept.id} value={dept.id}>{deptIndent(depth)}{dept.name_ar}</option>
               ))}
             </select>
           </label>
