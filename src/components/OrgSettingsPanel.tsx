@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, Department, DocumentType, errorMessage } from "../lib/api";
+import { api, Department, DocumentType, Correspondent, CORRESPONDENT_KIND_LABELS, errorMessage } from "../lib/api";
 
 function Section({
   title,
@@ -81,6 +81,7 @@ function DeptRow({
 export default function OrgSettingsPanel({ onClose }: { onClose: () => void }) {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [types, setTypes] = useState<DocumentType[]>([]);
+  const [correspondents, setCorrespondents] = useState<Correspondent[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const [newDeptName, setNewDeptName] = useState("");
@@ -88,11 +89,36 @@ export default function OrgSettingsPanel({ onClose }: { onClose: () => void }) {
   const [newDeptParent, setNewDeptParent] = useState<string | null>(null);
   const [newTypeName, setNewTypeName] = useState("");
 
+  const [newCorrName, setNewCorrName] = useState("");
+  const [newCorrKind, setNewCorrKind] = useState("other");
+
   function refresh() {
     api.listDepartments().then(setDepartments).catch(() => {});
     api.listDocumentTypes().then(setTypes).catch(() => {});
+    api.listCorrespondents().then(setCorrespondents).catch(() => {});
   }
   useEffect(refresh, []);
+
+  async function handleAddCorrespondent(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newCorrName.trim()) return;
+    try {
+      await api.addCorrespondent(newCorrName.trim(), newCorrKind, null);
+      setNewCorrName("");
+      refresh();
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }
+
+  async function handleDeleteCorrespondent(id: string) {
+    try {
+      await api.deleteCorrespondent(id);
+      refresh();
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }
 
   async function handleAddDept(e: React.FormEvent) {
     e.preventDefault();
@@ -173,7 +199,7 @@ export default function OrgSettingsPanel({ onClose }: { onClose: () => void }) {
 
         {error && <p className="text-sm text-danger bg-danger/10 rounded-md p-2">{error}</p>}
 
-        <div className="flex flex-col sm:flex-row gap-6">
+        <div className="flex flex-col sm:flex-row gap-6 flex-wrap">
           <Section title="الأقسام">
             {departments.length === 0 && (
               <p className="text-xs text-text-secondary dark:text-white/40">لا أقسام بعد.</p>
@@ -229,6 +255,38 @@ export default function OrgSettingsPanel({ onClose }: { onClose: () => void }) {
             </p>
             <form onSubmit={handleAddType} className="flex gap-1.5 mt-1">
               <input value={newTypeName} onChange={(e) => setNewTypeName(e.target.value)} placeholder="اسم النوع" className={inputClass} />
+              <button type="submit" className="shrink-0 text-xs px-3 rounded-lg bg-accent text-white hover:bg-primary">+</button>
+            </form>
+          </Section>
+
+          <Section title="جهات المراسلة">
+            {correspondents.length === 0 && (
+              <p className="text-xs text-text-secondary dark:text-white/40">لا جهات بعد.</p>
+            )}
+            {correspondents.map((c) => (
+              <div key={c.id} className={rowClass}>
+                <span className="truncate text-text-primary dark:text-white">
+                  {c.name}{" "}
+                  <span className="text-text-secondary dark:text-white/40 text-xs">
+                    ({CORRESPONDENT_KIND_LABELS[c.kind] || c.kind})
+                  </span>
+                </span>
+                <button onClick={() => handleDeleteCorrespondent(c.id)} className="text-danger/70 hover:text-danger text-xs shrink-0">
+                  حذف
+                </button>
+              </div>
+            ))}
+            <form onSubmit={handleAddCorrespondent} className="flex gap-1.5 mt-1">
+              <input value={newCorrName} onChange={(e) => setNewCorrName(e.target.value)} placeholder="اسم الجهة" className={inputClass} />
+              <select
+                value={newCorrKind}
+                onChange={(e) => setNewCorrKind(e.target.value)}
+                className="text-sm px-2 py-2 rounded-lg border border-border-light dark:border-white/10 bg-white dark:bg-white/5 dark:text-white"
+              >
+                {Object.entries(CORRESPONDENT_KIND_LABELS).map(([k, label]) => (
+                  <option key={k} value={k}>{label}</option>
+                ))}
+              </select>
               <button type="submit" className="shrink-0 text-xs px-3 rounded-lg bg-accent text-white hover:bg-primary">+</button>
             </form>
           </Section>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Document, api, downloadBase64, errorMessage, CONFIDENTIALITY_LABELS, STATUS_LABELS, PHYSICAL_STATUS_LABELS } from "../lib/api";
 import QrModal from "./QrModal";
+import RoutingModal from "./RoutingModal";
 
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} بايت`;
@@ -35,6 +36,7 @@ export default function DocumentCard({
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showQr, setShowQr] = useState(false);
+  const [showRouting, setShowRouting] = useState(false);
 
   async function handleDownload() {
     setDownloading(true);
@@ -130,6 +132,14 @@ export default function DocumentCard({
           )}
         </div>
         <div className="flex items-center gap-3">
+          {canWrite && (
+            <button
+              onClick={() => setShowRouting(true)}
+              className="text-xs text-text-secondary dark:text-white/50 hover:text-accent transition-colors"
+            >
+              إحالة
+            </button>
+          )}
           <button
             onClick={() => setShowQr(true)}
             className="text-xs text-text-secondary dark:text-white/50 hover:text-accent transition-colors"
@@ -148,6 +158,7 @@ export default function DocumentCard({
 
       {error && <p className="text-xs text-danger">{error}</p>}
       {showQr && <QrModal documentId={doc.id} title={doc.title} onClose={() => setShowQr(false)} />}
+      {showRouting && <RoutingModal documentId={doc.id} title={doc.title} onClose={() => setShowRouting(false)} />}
     </div>
   );
 }

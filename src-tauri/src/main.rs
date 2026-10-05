@@ -28,6 +28,7 @@ fn main() {
             commands::auth::login,
             commands::auth::logout,
             commands::auth::current_user,
+            commands::auth::list_users,
             // الوثائق
             commands::documents::add_document,
             commands::documents::list_documents,
@@ -59,6 +60,13 @@ fn main() {
             // الأرشيف الورقي
             commands::physical::update_physical,
             commands::physical::get_document_qr,
+            // جهات المراسلة
+            commands::correspondents::add_correspondent,
+            commands::correspondents::list_correspondents,
+            commands::correspondents::delete_correspondent,
+            // سجل الإحالة
+            commands::routing::route_document,
+            commands::routing::list_document_routing,
             // المزامنة
             commands::sync::sync_status,
             commands::sync::has_users,

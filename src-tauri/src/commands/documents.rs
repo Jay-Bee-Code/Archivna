@@ -39,6 +39,7 @@ pub struct Document {
     pub physical_status: String,
     pub borrowed_by: Option<String>,
     pub borrowed_at: Option<i64>,
+    pub correspondent_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -51,6 +52,7 @@ pub struct NewDocumentInput {
     pub department_id: Option<String>,
     pub document_type_id: Option<String>,
     pub confidentiality_level: Option<i64>,
+    pub correspondent_id: Option<String>,
 }
 
 #[derive(Debug, thiserror::Error, Serialize)]
@@ -89,7 +91,8 @@ macro_rules! require_conn {
 pub(crate) const DOC_COLUMNS: &str = "id, title, category_id, file_hash, file_size, mime_type,
     created_at, updated_at, (ocr_text IS NOT NULL AND ocr_text <> ''),
     department_id, document_type_id, registry_number, confidentiality_level, status,
-    legal_hold, disposed_at, physical_location, physical_status, borrowed_by, borrowed_at";
+    legal_hold, disposed_at, physical_location, physical_status, borrowed_by, borrowed_at,
+    correspondent_id";
 
 /// يبني حالة الوثيقة كاملة كـ JSON لإرسالها عبر المزامنة. **إلزامي** لأي حدث
 /// "document"/"upsert" — محرك المزامنة (sync/store.rs) يتطلب الحالة كاملة في
@@ -104,7 +107,7 @@ pub(crate) fn full_document_payload(conn: &Connection, id: &str) -> Result<serde
         "SELECT title, category_id, file_hash, file_size, mime_type, ocr_text,
                 department_id, document_type_id, registry_number, confidentiality_level, status, metadata,
                 legal_hold, disposed_at, physical_location, physical_status, borrowed_by, borrowed_at,
-                created_by, created_at, updated_at, origin_node_id, is_deleted
+                created_by, created_at, updated_at, origin_node_id, is_deleted, correspondent_id
          FROM documents WHERE id = ?1",
         params![id],
         |r| {
@@ -133,6 +136,7 @@ pub(crate) fn full_document_payload(conn: &Connection, id: &str) -> Result<serde
                 "updated_at": r.get::<_, Option<i64>>(20)?,
                 "origin_node_id": r.get::<_, String>(21)?,
                 "is_deleted": r.get::<_, i64>(22)?,
+                "correspondent_id": r.get::<_, Option<String>>(23)?,
             }))
         },
     )
@@ -148,6 +152,7 @@ pub(crate) fn row_to_document(row: &rusqlite::Row) -> rusqlite::Result<Document>
         registry_number: row.get(11)?, confidentiality_level: row.get(12)?, status: row.get(13)?,
         legal_hold: row.get(14)?, disposed_at: row.get(15)?, physical_location: row.get(16)?,
         physical_status: row.get(17)?, borrowed_by: row.get(18)?, borrowed_at: row.get(19)?,
+        correspondent_id: row.get(20)?,
     })
 }
 
@@ -269,13 +274,13 @@ pub fn add_document(
         "INSERT INTO documents
             (id, title, category_id, file_hash, file_path, file_size, mime_type, ocr_text,
              department_id, document_type_id, registry_number, confidentiality_level, status,
-             created_by, created_at, origin_node_id)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)",
+             correspondent_id, created_by, created_at, origin_node_id)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)",
         params![
             id, input.title, input.category_id, hash,
             file_path.to_string_lossy().to_string(), bytes.len() as i64, input.mime_type, ocr_text,
             department_id, input.document_type_id, registry_number, confidentiality, status,
-            user.id, now, node,
+            input.correspondent_id, user.id, now, node,
         ],
     )?;
 
@@ -290,7 +295,8 @@ pub fn add_document(
         &serde_json::json!({
             "id": id, "title": input.title, "category_id": input.category_id,
             "file_hash": hash, "file_size": bytes.len(), "mime_type": input.mime_type,
-            "ocr_text": ocr_text, "created_by": user.id, "created_at": now, "updated_at": null,
+            "ocr_text": ocr_text, "correspondent_id": input.correspondent_id,
+            "created_by": user.id, "created_at": now, "updated_at": null,
             "origin_node_id": node, "is_deleted": 0,
             "department_id": department_id, "document_type_id": input.document_type_id,
             "registry_number": registry_number, "confidentiality_level": confidentiality,
@@ -306,6 +312,7 @@ pub fn add_document(
         registry_number, confidentiality_level: confidentiality, status: status.to_string(),
         legal_hold: false, disposed_at: None, physical_location: None,
         physical_status: "none".to_string(), borrowed_by: None, borrowed_at: None,
+        correspondent_id: input.correspondent_id,
     })
 }
 
@@ -359,7 +366,8 @@ pub fn search_documents(
         "SELECT d.id, d.title, d.category_id, d.file_hash, d.file_size, d.mime_type,
                 d.created_at, d.updated_at, (d.ocr_text IS NOT NULL AND d.ocr_text <> ''),
                 d.department_id, d.document_type_id, d.registry_number, d.confidentiality_level, d.status,
-                d.legal_hold, d.disposed_at, d.physical_location, d.physical_status, d.borrowed_by, d.borrowed_at
+                d.legal_hold, d.disposed_at, d.physical_location, d.physical_status, d.borrowed_by, d.borrowed_at,
+                d.correspondent_id
          FROM documents d JOIN documents_fts fts ON d.rowid = fts.rowid
          WHERE documents_fts MATCH :q AND d.is_deleted = 0{}
          ORDER BY rank",

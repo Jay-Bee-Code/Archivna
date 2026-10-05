@@ -287,6 +287,29 @@ pub fn login(
     Ok(user)
 }
 
+/// قائمة المستخدمين النشطين — للمدير والأرشيفي فقط (تُستخدم لاختيار "مُحال إليه" عند الإحالة)
+#[tauri::command]
+pub fn list_users(db: State<DbState>, session: State<SessionState>) -> Result<Vec<UserPublic>, ArchiveError> {
+    require_role(&session, &[ROLE_ADMIN, ROLE_ARCHIVIST])?;
+    let guard = db.0.lock().unwrap();
+    let conn = guard.as_ref().ok_or_else(|| ArchiveError::Invalid("الخزنة مقفلة".into()))?;
+
+    let mut stmt = conn.prepare(
+        "SELECT id, username, full_name, role, clearance_level, department_id
+         FROM users WHERE is_active = 1 ORDER BY username ASC",
+    )?;
+    let users = stmt
+        .query_map([], |r| {
+            Ok(UserPublic {
+                id: r.get(0)?, username: r.get(1)?, full_name: r.get(2)?, role: r.get(3)?,
+                clearance_level: r.get(4)?, department_id: r.get(5)?,
+            })
+        })?
+        .filter_map(Result::ok)
+        .collect();
+    Ok(users)
+}
+
 #[tauri::command]
 pub fn logout(session: State<SessionState>) -> Result<(), ArchiveError> {
     *session.0.lock().unwrap() = None;

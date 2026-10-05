@@ -21,6 +21,7 @@ export interface Document {
   physical_status: string;
   borrowed_by: string | null;
   borrowed_at: number | null;
+  correspondent_id: string | null;
 }
 
 export interface NewDocumentInput {
@@ -31,6 +32,7 @@ export interface NewDocumentInput {
   departmentId: string | null;
   documentTypeId: string | null;
   confidentialityLevel: number | null;
+  correspondentId: string | null;
 }
 
 export interface Department {
@@ -97,6 +99,33 @@ export interface QrResult {
   payload: string;
 }
 
+export interface Correspondent {
+  id: string;
+  name: string;
+  kind: string;
+  address: string | null;
+  is_active: boolean;
+  created_at: number;
+}
+
+export const CORRESPONDENT_KIND_LABELS: Record<string, string> = {
+  ministry: "وزارة",
+  wilaya: "ولاية",
+  company: "شركة",
+  individual: "فرد",
+  other: "أخرى",
+};
+
+export interface RoutingEntry {
+  id: string;
+  document_id: string;
+  routed_to_user_id: string;
+  routed_to_username: string | null;
+  routed_by: string | null;
+  routed_at: number;
+  note: string | null;
+}
+
 export interface Category {
   id: string;
   name: string;
@@ -158,6 +187,7 @@ export const api = {
     invoke<UserPublic>("login", { username, password }),
   logout: () => invoke<void>("logout"),
   currentUser: () => invoke<UserPublic | null>("current_user"),
+  listUsers: () => invoke<UserPublic[]>("list_users"),
 
   // الوثائق
   addDocument: (input: NewDocumentInput) => invoke<Document>("add_document", { input }),
@@ -210,6 +240,18 @@ export const api = {
   hasUsers: () => invoke<boolean>("has_users"),
   setSyncKey: (passphrase: string) => invoke<void>("set_sync_key", { passphrase }),
   syncNow: () => invoke<void>("sync_now"),
+
+  // جهات المراسلة
+  addCorrespondent: (name: string, kind: string, address: string | null) =>
+    invoke<Correspondent>("add_correspondent", { input: { name, kind, address } }),
+  listCorrespondents: () => invoke<Correspondent[]>("list_correspondents"),
+  deleteCorrespondent: (id: string) => invoke<void>("delete_correspondent", { id }),
+
+  // سجل الإحالة
+  routeDocument: (documentId: string, toUserId: string, note: string | null) =>
+    invoke<void>("route_document", { documentId, toUserId, note }),
+  listDocumentRouting: (documentId: string) =>
+    invoke<RoutingEntry[]>("list_document_routing", { documentId }),
 };
 
 /** يحوّل ملف (من input[type=file]) إلى base64 نظيف بدون البادئة data:...;base64, */

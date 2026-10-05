@@ -4,6 +4,8 @@ import {
   Category,
   Department,
   DocumentType,
+  Correspondent,
+  CORRESPONDENT_KIND_LABELS,
   CONFIDENTIALITY_LABELS,
   fileToBase64,
   errorMessage,
@@ -33,6 +35,8 @@ export default function UploadModal({
 
   const [departments, setDepartments] = useState<Department[]>([]);
   const [types, setTypes] = useState<DocumentType[]>([]);
+  const [correspondents, setCorrespondents] = useState<Correspondent[]>([]);
+  const [correspondentId, setCorrespondentId] = useState<string | null>(null);
   const [suggested, setSuggested] = useState<string[]>([]);
   const [addingType, setAddingType] = useState(false);
   const [newTypeName, setNewTypeName] = useState("");
@@ -44,6 +48,7 @@ export default function UploadModal({
     api.listDepartments().then(setDepartments).catch(() => {});
     api.listDocumentTypes().then(setTypes).catch(() => {});
     api.suggestedDocumentTypes().then(setSuggested).catch(() => {});
+    api.listCorrespondents().then(setCorrespondents).catch(() => {});
   }, []);
 
   async function handleAddType(name: string) {
@@ -72,6 +77,7 @@ export default function UploadModal({
         departmentId,
         documentTypeId,
         confidentialityLevel: confidentiality,
+        correspondentId,
       });
       onUploaded();
     } catch (err) {
@@ -193,6 +199,22 @@ export default function UploadModal({
               )}
             </div>
           )}
+        </label>
+
+        <label className="flex flex-col gap-1">
+          <span className="text-xs text-text-secondary dark:text-white/50">جهة المراسلة (المُرسِل/المُستقبِل)</span>
+          <select
+            value={correspondentId ?? ""}
+            onChange={(e) => setCorrespondentId(e.target.value || null)}
+            className={selectClass}
+          >
+            <option value="">بلا جهة</option>
+            {correspondents.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name} ({CORRESPONDENT_KIND_LABELS[c.kind] || c.kind})
+              </option>
+            ))}
+          </select>
         </label>
 
         <label className="flex flex-col gap-1">

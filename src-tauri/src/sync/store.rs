@@ -205,6 +205,7 @@ fn apply_one(conn: &Connection, ev: &SyncEvent, vault_dir: &Path) -> Result<bool
     if !matches!(
         ev.entity_type.as_str(),
         "document" | "category" | "user" | "department" | "document_type" | "disposal_log"
+            | "correspondent" | "document_routing"
     )
         || !matches!(ev.operation.as_str(), "upsert" | "delete")
     {
@@ -299,8 +300,8 @@ fn apply_state(tx: &Connection, ev: &SyncEvent, vault_dir: &Path) -> Result<(), 
                     (id, title, category_id, file_hash, file_path, file_size, mime_type, ocr_text,
                      department_id, document_type_id, registry_number, confidentiality_level, status, metadata,
                      legal_hold, disposed_at, physical_location, physical_status, borrowed_by, borrowed_at,
-                     created_by, created_at, updated_at, origin_node_id, is_deleted)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25)
+                     correspondent_id, created_by, created_at, updated_at, origin_node_id, is_deleted)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26)
                  ON CONFLICT(id) DO UPDATE SET
                     title = excluded.title, category_id = excluded.category_id,
                     ocr_text = excluded.ocr_text,
@@ -310,6 +311,7 @@ fn apply_state(tx: &Connection, ev: &SyncEvent, vault_dir: &Path) -> Result<(), 
                     legal_hold = excluded.legal_hold, disposed_at = excluded.disposed_at,
                     physical_location = excluded.physical_location, physical_status = excluded.physical_status,
                     borrowed_by = excluded.borrowed_by, borrowed_at = excluded.borrowed_at,
+                    correspondent_id = excluded.correspondent_id,
                     updated_at = excluded.updated_at, is_deleted = excluded.is_deleted",
                 params![
                     id,
@@ -332,6 +334,7 @@ fn apply_state(tx: &Connection, ev: &SyncEvent, vault_dir: &Path) -> Result<(), 
                     p.get("physical_status").and_then(|v| v.as_str()).unwrap_or("none").to_string(),
                     opt_str(p, "borrowed_by"),
                     p.get("borrowed_at").and_then(|v| v.as_i64()),
+                    opt_str(p, "correspondent_id"),
                     opt_str(p, "created_by"),
                     int_field(p, "created_at"),
                     p.get("updated_at").and_then(|v| v.as_i64()),
@@ -351,6 +354,41 @@ fn apply_state(tx: &Connection, ev: &SyncEvent, vault_dir: &Path) -> Result<(), 
                     let _ = std::fs::remove_file(&path); // best-effort — طبيعي ألا يكون الملف وصل لهذا الجهاز أصلًا
                 }
             }
+        }
+        ("correspondent", "upsert") => {
+            tx.execute(
+                "INSERT INTO correspondents (id, name, kind, address, is_active, created_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+                 ON CONFLICT(id) DO UPDATE SET
+                    name = excluded.name, kind = excluded.kind, address = excluded.address,
+                    is_active = excluded.is_active",
+                params![
+                    id,
+                    str_field(p, "name")?,
+                    p.get("kind").and_then(|v| v.as_str()).unwrap_or("other").to_string(),
+                    opt_str(p, "address"),
+                    p.get("is_active").and_then(|v| v.as_i64()).unwrap_or(1),
+                    int_field(p, "created_at"),
+                ],
+            )?;
+        }
+        ("correspondent", "delete") => {
+            tx.execute("UPDATE correspondents SET is_active = 0 WHERE id = ?1", params![id])?;
+        }
+        ("document_routing", "upsert") => {
+            tx.execute(
+                "INSERT INTO document_routing (id, document_id, routed_to_user_id, routed_by, routed_at, note)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+                 ON CONFLICT(id) DO NOTHING",
+                params![
+                    id,
+                    str_field(p, "document_id")?,
+                    str_field(p, "routed_to_user_id")?,
+                    opt_str(p, "routed_by"),
+                    int_field(p, "routed_at"),
+                    opt_str(p, "note"),
+                ],
+            )?;
         }
         ("disposal_log", "upsert") => {
             tx.execute(

@@ -111,7 +111,8 @@ pub fn list_disposal_candidates(
     let cols = "d.id, d.title, d.category_id, d.file_hash, d.file_size, d.mime_type,
                 d.created_at, d.updated_at, (d.ocr_text IS NOT NULL AND d.ocr_text <> ''),
                 d.department_id, d.document_type_id, d.registry_number, d.confidentiality_level, d.status,
-                d.legal_hold, d.disposed_at, d.physical_location, d.physical_status, d.borrowed_by, d.borrowed_at";
+                d.legal_hold, d.disposed_at, d.physical_location, d.physical_status, d.borrowed_by, d.borrowed_at,
+                d.correspondent_id";
     // ملاحظة حسّاسة أخرى: strftime('%s','now') في SQLite تُرجع TEXT، ومقارنتها بعدد صحيح
     // تجعل الشرط صحيحًا دائمًا (TEXT > INTEGER في قواعد ترتيب الأنواع بـ SQLite)
     // بصرف النظر عن التاريخ الفعلي — نمرّر الوقت الحالي من Rust بدل الاعتماد على SQL
