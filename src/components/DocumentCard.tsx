@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Document, api, downloadBase64, errorMessage, CONFIDENTIALITY_LABELS, STATUS_LABELS, PHYSICAL_STATUS_LABELS } from "../lib/api";
 import QrModal from "./QrModal";
 import RoutingModal from "./RoutingModal";
+import { IconLock, IconScale, IconBox, IconNote, IconRoute, IconQr, IconDownload, IconSpinner, IconTrash } from "./icons/Icon";
 
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} بايت`;
@@ -74,10 +75,10 @@ export default function DocumentCard({
         {canWrite && (
           <button
             onClick={() => onDelete(doc.id)}
-            className="text-text-secondary/50 hover:text-danger dark:text-white/30 dark:hover:text-danger text-xs shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="flex items-center gap-1 text-text-secondary/50 hover:text-danger dark:text-white/30 dark:hover:text-danger text-xs shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
             title="حذف"
           >
-            حذف
+            <IconTrash size={13} />
           </button>
         )}
       </div>
@@ -96,8 +97,8 @@ export default function DocumentCard({
 
       <div className="flex items-center justify-between mt-1">
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[11px] px-2 py-0.5 rounded-full bg-success/10 text-success">
-            🔒 مشفّر
+          <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-success/10 text-success">
+            <IconLock size={11} /> مشفّر
           </span>
           {doc.confidentiality_level > 1 && (
             <span className={`text-[11px] px-2 py-0.5 rounded-full ${CONF_STYLES[doc.confidentiality_level]}`}>
@@ -111,23 +112,23 @@ export default function DocumentCard({
           )}
           {doc.legal_hold && (
             <span
-              className="text-[11px] px-2 py-0.5 rounded-full bg-warning/15 text-warning"
+              className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-warning/15 text-warning"
               title="مجمَّدة قانونيًا — لا يمكن إتلافها"
             >
-              ⚖️ مجمَّدة
+              <IconScale size={11} /> مجمَّدة
             </span>
           )}
           {doc.physical_status !== "none" && (
-            <span className="text-[11px] px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/5 text-text-secondary dark:text-white/60">
-              📦 {PHYSICAL_STATUS_LABELS[doc.physical_status] || doc.physical_status}
+            <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/5 text-text-secondary dark:text-white/60">
+              <IconBox size={11} /> {PHYSICAL_STATUS_LABELS[doc.physical_status] || doc.physical_status}
             </span>
           )}
           {doc.has_ocr && (
             <span
-              className="text-[11px] px-2 py-0.5 rounded-full bg-accent/10 text-accent"
+              className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-accent/10 text-accent"
               title="النص داخل هذه الصورة قابل للبحث (OCR)"
             >
-              📝 نص مستخرَج
+              <IconNote size={11} /> نص مستخرَج
             </span>
           )}
         </div>
@@ -135,23 +136,31 @@ export default function DocumentCard({
           {canWrite && (
             <button
               onClick={() => setShowRouting(true)}
-              className="text-xs text-text-secondary dark:text-white/50 hover:text-accent transition-colors"
+              className="flex items-center gap-1 text-xs text-text-secondary dark:text-white/50 hover:text-accent transition-colors"
             >
-              إحالة
+              <IconRoute size={13} /> إحالة
             </button>
           )}
           <button
             onClick={() => setShowQr(true)}
-            className="text-xs text-text-secondary dark:text-white/50 hover:text-accent transition-colors"
+            className="flex items-center gap-1 text-xs text-text-secondary dark:text-white/50 hover:text-accent transition-colors"
           >
-            QR
+            <IconQr size={13} /> QR
           </button>
           <button
             onClick={handleDownload}
             disabled={downloading}
-            className="text-xs text-accent hover:text-primary dark:hover:text-white font-medium disabled:opacity-50 transition-colors"
+            className="flex items-center gap-1 text-xs text-accent hover:text-primary dark:hover:text-white font-medium disabled:opacity-50 transition-colors"
           >
-            {downloading ? "جارٍ فك التشفير…" : "تنزيل ↓"}
+            {downloading ? (
+              <>
+                <IconSpinner size={12} /> جارٍ فك التشفير…
+              </>
+            ) : (
+              <>
+                <IconDownload size={13} /> تنزيل
+              </>
+            )}
           </button>
         </div>
       </div>

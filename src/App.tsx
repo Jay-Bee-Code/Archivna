@@ -12,6 +12,7 @@ import Logo from "./components/Logo";
 import UploadModal from "./components/UploadModal";
 import OrgSettingsPanel from "./components/OrgSettingsPanel";
 import RetentionPanel from "./components/RetentionPanel";
+import { IconSettings, IconRecycle, IconLogout, IconSearch, IconUpload } from "./components/icons/Icon";
 
 type Stage = "checking" | "unlock" | "setup-admin" | "sync-setup" | "login" | "ready";
 
@@ -126,28 +127,28 @@ function Archive({ user, onLogout }: { user: UserPublic; onLogout: () => void })
             </span>
           </div>
           {user.role === "admin" && (
-            <>
+            <div className="flex items-center gap-1">
               <button
                 onClick={() => setShowOrgSettings(true)}
-                className="text-xs text-text-secondary dark:text-white/50 hover:text-primary dark:hover:text-white transition-colors"
+                className="flex items-center gap-1.5 text-xs text-text-secondary dark:text-white/60 hover:text-primary dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 px-2.5 py-1.5 rounded-lg transition-colors"
                 title="الهيكل التنظيمي وأنواع الوثائق"
               >
-                ⚙️ الإعدادات
+                <IconSettings size={14} /> الإعدادات
               </button>
               <button
                 onClick={() => setShowRetention(true)}
-                className="text-xs text-text-secondary dark:text-white/50 hover:text-primary dark:hover:text-white transition-colors"
+                className="flex items-center gap-1.5 text-xs text-text-secondary dark:text-white/60 hover:text-primary dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 px-2.5 py-1.5 rounded-lg transition-colors"
                 title="الاحتفاظ والإتلاف"
               >
-                ♻️ الإتلاف
+                <IconRecycle size={14} /> الإتلاف
               </button>
-            </>
+            </div>
           )}
           <button
             onClick={onLogout}
-            className="text-xs text-text-secondary dark:text-white/50 hover:text-danger dark:hover:text-danger transition-colors"
+            className="flex items-center gap-1.5 text-xs text-text-secondary dark:text-white/50 hover:text-danger px-2.5 py-1.5 rounded-lg hover:bg-danger/5 transition-colors"
           >
-            خروج
+            <IconLogout size={14} /> خروج
           </button>
         </div>
       </header>
@@ -182,13 +183,19 @@ function Archive({ user, onLogout }: { user: UserPublic; onLogout: () => void })
 
         <main className="flex-1 p-6">
           <div className="flex items-center gap-3 mb-6">
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="بحث في الأرشيف… (العنوان والمحتوى)"
-              className="flex-1 max-w-xl px-4 py-2.5 rounded-lg border border-border-light dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-accent bg-white dark:bg-white/5 dark:text-white placeholder:text-text-secondary/70 dark:placeholder:text-white/30"
-            />
+            <div className="relative flex-1 max-w-xl">
+              <IconSearch
+                size={15}
+                className="absolute top-1/2 -translate-y-1/2 start-3.5 text-text-secondary/50 dark:text-white/30 pointer-events-none"
+              />
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="بحث في الأرشيف… (العنوان والمحتوى)"
+                className="w-full ps-9 pe-4 py-2.5 rounded-lg border border-border-light dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-accent bg-white dark:bg-white/5 dark:text-white placeholder:text-text-secondary/70 dark:placeholder:text-white/30"
+              />
+            </div>
             {activeCategoryName && (
               <span className="text-xs px-3 py-1.5 rounded-full bg-accent/10 text-accent whitespace-nowrap">
                 الفئة: {activeCategoryName}

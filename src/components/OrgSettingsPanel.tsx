@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, Department, DocumentType, Correspondent, CORRESPONDENT_KIND_LABELS, errorMessage } from "../lib/api";
+import { IconSettings, IconClose, IconTrash, IconPlus } from "./icons/Icon";
 
 function Section({
   title,
@@ -61,13 +62,13 @@ function DeptRow({
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => onAddChild(node.id)}
-            className="text-accent hover:text-primary text-xs"
+            className="flex items-center gap-1 text-accent hover:text-primary text-xs"
             title="إضافة قسم فرعي"
           >
-            + فرعي
+            <IconPlus size={11} /> فرعي
           </button>
-          <button onClick={() => onDelete(node.id)} className="text-danger/70 hover:text-danger text-xs">
-            حذف
+          <button onClick={() => onDelete(node.id)} className="text-danger/70 hover:text-danger" title="حذف">
+            <IconTrash size={13} />
           </button>
         </div>
       </div>
@@ -191,9 +192,14 @@ export default function OrgSettingsPanel({ onClose }: { onClose: () => void }) {
         className="w-full max-w-2xl bg-white dark:bg-[#132033] border border-border-light dark:border-white/10 rounded-2xl p-6 flex flex-col gap-4 max-h-[85vh] overflow-y-auto"
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-primary dark:text-white">الهيكل التنظيمي وأنواع الوثائق</h2>
-          <button onClick={onClose} className="text-text-secondary dark:text-white/50 hover:text-danger text-sm">
-            إغلاق ✕
+          <h2 className="flex items-center gap-2 text-base font-bold text-primary dark:text-white">
+            <IconSettings size={18} /> الهيكل التنظيمي وأنواع الوثائق
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-text-secondary dark:text-white/50 hover:text-danger hover:bg-danger/5 p-1.5 rounded-lg transition-colors"
+          >
+            <IconClose size={16} />
           </button>
         </div>
 
@@ -225,7 +231,7 @@ export default function OrgSettingsPanel({ onClose }: { onClose: () => void }) {
             <form onSubmit={handleAddDept} className="flex gap-1.5 mt-1">
               <input value={newDeptName} onChange={(e) => setNewDeptName(e.target.value)} placeholder="اسم القسم" className={inputClass} />
               <input value={newDeptCode} onChange={(e) => setNewDeptCode(e.target.value)} placeholder="الرمز" className="w-20 text-sm px-2 py-2 rounded-lg border border-border-light dark:border-white/10 bg-white dark:bg-white/5 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent" />
-              <button type="submit" className="shrink-0 text-xs px-3 rounded-lg bg-accent text-white hover:bg-primary">+</button>
+              <button type="submit" className="shrink-0 px-3 rounded-lg bg-accent text-white hover:bg-primary flex items-center justify-center" title="إضافة"><IconPlus size={13} /></button>
             </form>
           </Section>
 
@@ -245,8 +251,8 @@ export default function OrgSettingsPanel({ onClose }: { onClose: () => void }) {
                   title="مدة الاحتفاظ بالسنوات (اتركه فارغًا = دائم)"
                   className="w-16 text-xs px-1.5 py-1 rounded-md border border-border-light dark:border-white/10 bg-white dark:bg-white/5 dark:text-white text-center"
                 />
-                <button onClick={() => handleDeleteType(t.id)} className="text-danger/70 hover:text-danger text-xs shrink-0">
-                  حذف
+                <button onClick={() => handleDeleteType(t.id)} className="text-danger/70 hover:text-danger text-xs shrink-0" title="حذف">
+                  <IconTrash size={13} />
                 </button>
               </div>
             ))}
@@ -255,7 +261,7 @@ export default function OrgSettingsPanel({ onClose }: { onClose: () => void }) {
             </p>
             <form onSubmit={handleAddType} className="flex gap-1.5 mt-1">
               <input value={newTypeName} onChange={(e) => setNewTypeName(e.target.value)} placeholder="اسم النوع" className={inputClass} />
-              <button type="submit" className="shrink-0 text-xs px-3 rounded-lg bg-accent text-white hover:bg-primary">+</button>
+              <button type="submit" className="shrink-0 px-3 rounded-lg bg-accent text-white hover:bg-primary flex items-center justify-center" title="إضافة"><IconPlus size={13} /></button>
             </form>
           </Section>
 
@@ -271,8 +277,8 @@ export default function OrgSettingsPanel({ onClose }: { onClose: () => void }) {
                     ({CORRESPONDENT_KIND_LABELS[c.kind] || c.kind})
                   </span>
                 </span>
-                <button onClick={() => handleDeleteCorrespondent(c.id)} className="text-danger/70 hover:text-danger text-xs shrink-0">
-                  حذف
+                <button onClick={() => handleDeleteCorrespondent(c.id)} className="text-danger/70 hover:text-danger text-xs shrink-0" title="حذف">
+                  <IconTrash size={13} />
                 </button>
               </div>
             ))}
@@ -287,7 +293,7 @@ export default function OrgSettingsPanel({ onClose }: { onClose: () => void }) {
                   <option key={k} value={k}>{label}</option>
                 ))}
               </select>
-              <button type="submit" className="shrink-0 text-xs px-3 rounded-lg bg-accent text-white hover:bg-primary">+</button>
+              <button type="submit" className="shrink-0 px-3 rounded-lg bg-accent text-white hover:bg-primary flex items-center justify-center" title="إضافة"><IconPlus size={13} /></button>
             </form>
           </Section>
         </div>

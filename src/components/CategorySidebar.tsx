@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Category } from "../lib/api";
+import { IconPlus } from "./icons/Icon";
 
 export default function CategorySidebar({
   categories,
@@ -78,9 +79,10 @@ export default function CategorySidebar({
         <button
           type="submit"
           disabled={adding || !newName.trim()}
-          className="text-xs px-2.5 py-1.5 rounded-lg bg-accent text-white disabled:opacity-40 shrink-0 hover:bg-primary transition-colors"
+          className="px-2.5 py-1.5 rounded-lg bg-accent text-white disabled:opacity-40 shrink-0 hover:bg-primary transition-colors flex items-center justify-center"
+          title="إضافة"
         >
-          +
+          <IconPlus size={12} />
         </button>
       </form>
     </div>

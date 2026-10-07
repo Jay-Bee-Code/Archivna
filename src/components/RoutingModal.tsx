@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, UserPublic, RoutingEntry, errorMessage } from "../lib/api";
+import { IconRoute, IconClose } from "./icons/Icon";
 
 function formatDate(ts: number): string {
   return new Date(ts * 1000).toLocaleDateString("ar-DZ", { year: "numeric", month: "short", day: "numeric" });
@@ -55,9 +56,14 @@ export default function RoutingModal({
         className="w-full max-w-sm bg-white dark:bg-[#132033] border border-border-light dark:border-white/10 rounded-2xl p-6 flex flex-col gap-3 max-h-[85vh] overflow-y-auto"
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold text-primary dark:text-white truncate">إحالة: {title}</h2>
-          <button onClick={onClose} className="text-text-secondary dark:text-white/50 hover:text-danger text-sm shrink-0">
-            ✕
+          <h2 className="flex items-center gap-1.5 text-sm font-bold text-primary dark:text-white truncate min-w-0">
+            <IconRoute size={15} className="shrink-0" /> <span className="truncate">إحالة: {title}</span>
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-text-secondary dark:text-white/50 hover:text-danger hover:bg-danger/5 p-1 rounded-lg shrink-0 transition-colors"
+          >
+            <IconClose size={15} />
           </button>
         </div>
 

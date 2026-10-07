@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, Document, DisposalRecord, errorMessage } from "../lib/api";
+import { IconScale, IconRecycle, IconClose } from "./icons/Icon";
 
 function formatDate(ts: number): string {
   return new Date(ts * 1000).toLocaleDateString("ar-DZ", { year: "numeric", month: "long", day: "numeric" });
@@ -58,9 +59,14 @@ export default function RetentionPanel({ onClose }: { onClose: () => void }) {
         className="w-full max-w-2xl bg-white dark:bg-[#132033] border border-border-light dark:border-white/10 rounded-2xl p-6 flex flex-col gap-4 max-h-[85vh] overflow-y-auto"
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-primary dark:text-white">الاحتفاظ والإتلاف</h2>
-          <button onClick={onClose} className="text-text-secondary dark:text-white/50 hover:text-danger text-sm">
-            إغلاق ✕
+          <h2 className="flex items-center gap-2 text-base font-bold text-primary dark:text-white">
+            <IconRecycle size={18} /> الاحتفاظ والإتلاف
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-text-secondary dark:text-white/50 hover:text-danger hover:bg-danger/5 p-1.5 rounded-lg transition-colors"
+          >
+            <IconClose size={16} />
           </button>
         </div>
 
@@ -93,8 +99,8 @@ export default function RetentionPanel({ onClose }: { onClose: () => void }) {
                     </p>
                   </div>
                   {d.legal_hold && (
-                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-warning/15 text-warning shrink-0">
-                      ⚖️ مجمَّدة
+                    <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-warning/15 text-warning shrink-0">
+                      <IconScale size={11} /> مجمَّدة
                     </span>
                   )}
                 </div>
