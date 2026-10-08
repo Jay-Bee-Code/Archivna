@@ -63,7 +63,7 @@ export default function NetworkStatus() {
       </button>
 
       {open && (
-        <div className="absolute left-0 mt-2 w-72 bg-white dark:bg-[#132033] border border-border-light dark:border-white/10 rounded-xl shadow-lg dark:shadow-black/30 p-3.5 z-30 text-start">
+        <div className="absolute bottom-full start-0 mb-2 w-72 bg-white dark:bg-[#132033] border border-border-light dark:border-white/10 rounded-xl shadow-lg dark:shadow-black/30 p-3.5 z-30 text-start">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-xs font-semibold text-text-secondary dark:text-white/50">
               أجهزة الشبكة المحلية

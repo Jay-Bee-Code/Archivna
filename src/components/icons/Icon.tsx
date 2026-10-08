@@ -132,6 +132,36 @@ export function IconTrash({ size = 16, ...p }: IconProps) {
   );
 }
 
+export function IconDashboard({ size = 16, ...p }: IconProps) {
+  return (
+    <svg {...base(size)} {...p}>
+      <rect x="2.5" y="2.5" width="7" height="6" rx="1.2" />
+      <rect x="10.5" y="2.5" width="7" height="3.5" rx="1.2" />
+      <rect x="10.5" y="7.5" width="7" height="9.5" rx="1.2" />
+      <rect x="2.5" y="10" width="7" height="7" rx="1.2" />
+    </svg>
+  );
+}
+
+export function IconArchive({ size = 16, ...p }: IconProps) {
+  return (
+    <svg {...base(size)} {...p}>
+      <rect x="2.5" y="3" width="15" height="4" rx="1" />
+      <path d="M3.5 7v8a1.5 1.5 0 0 0 1.5 1.5h10A1.5 1.5 0 0 0 16.5 15V7" />
+      <path d="M8 10.5h4" />
+    </svg>
+  );
+}
+
+export function IconInbox({ size = 16, ...p }: IconProps) {
+  return (
+    <svg {...base(size)} {...p}>
+      <path d="M3 10.5 5 4h10l2 6.5" />
+      <path d="M3 10.5v4.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-4.5h-4.3a2.2 2.2 0 0 1-4.4 0H3Z" />
+    </svg>
+  );
+}
+
 export function IconUsers({ size = 16, ...p }: IconProps) {
   return (
     <svg {...base(size)} {...p}>

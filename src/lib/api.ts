@@ -126,6 +126,16 @@ export interface RoutingEntry {
   note: string | null;
 }
 
+export interface InboxEntry {
+  id: string;
+  document_id: string;
+  document_title: string;
+  routed_by: string | null;
+  routed_by_username: string | null;
+  routed_at: number;
+  note: string | null;
+}
+
 export interface Category {
   id: string;
   name: string;
@@ -252,6 +262,7 @@ export const api = {
     invoke<void>("route_document", { documentId, toUserId, note }),
   listDocumentRouting: (documentId: string) =>
     invoke<RoutingEntry[]>("list_document_routing", { documentId }),
+  listMyInbox: () => invoke<InboxEntry[]>("list_my_inbox"),
 };
 
 /** يحوّل ملف (من input[type=file]) إلى base64 نظيف بدون البادئة data:...;base64, */

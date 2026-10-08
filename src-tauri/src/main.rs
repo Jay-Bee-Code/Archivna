@@ -67,6 +67,7 @@ fn main() {
             // سجل الإحالة
             commands::routing::route_document,
             commands::routing::list_document_routing,
+            commands::routing::list_my_inbox,
             // المزامنة
             commands::sync::sync_status,
             commands::sync::has_users,

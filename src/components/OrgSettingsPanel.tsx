@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, Department, DocumentType, Correspondent, CORRESPONDENT_KIND_LABELS, errorMessage } from "../lib/api";
-import { IconSettings, IconClose, IconTrash, IconPlus } from "./icons/Icon";
+import { IconSettings, IconTrash, IconPlus } from "./icons/Icon";
 
 function Section({
   title,
@@ -79,7 +79,7 @@ function DeptRow({
   );
 }
 
-export default function OrgSettingsPanel({ onClose }: { onClose: () => void }) {
+export default function OrgSettingsPanel() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [types, setTypes] = useState<DocumentType[]>([]);
   const [correspondents, setCorrespondents] = useState<Correspondent[]>([]);
@@ -186,25 +186,14 @@ export default function OrgSettingsPanel({ onClose }: { onClose: () => void }) {
     "flex-1 min-w-0 text-sm px-3 py-2 rounded-lg border border-border-light dark:border-white/10 bg-white dark:bg-white/5 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent";
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-40 px-4" onClick={onClose}>
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-2xl bg-white dark:bg-[#132033] border border-border-light dark:border-white/10 rounded-2xl p-6 flex flex-col gap-4 max-h-[85vh] overflow-y-auto"
-      >
-        <div className="flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-base font-bold text-primary dark:text-white">
-            <IconSettings size={18} /> الهيكل التنظيمي وأنواع الوثائق
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-text-secondary dark:text-white/50 hover:text-danger hover:bg-danger/5 p-1.5 rounded-lg transition-colors"
-          >
-            <IconClose size={16} />
-          </button>
-        </div>
+    <div className="max-w-5xl mx-auto p-6 md:p-8 flex flex-col gap-5">
+      <h2 className="flex items-center gap-2.5 text-xl font-bold text-primary dark:text-white">
+        <IconSettings size={22} /> الهيكل التنظيمي وأنواع الوثائق
+      </h2>
 
-        {error && <p className="text-sm text-danger bg-danger/10 rounded-md p-2">{error}</p>}
+      {error && <p className="text-sm text-danger bg-danger/10 rounded-md p-2">{error}</p>}
 
+      <div className="bg-white dark:bg-white/[0.03] border border-border-light dark:border-white/10 rounded-2xl p-6">
         <div className="flex flex-col sm:flex-row gap-6 flex-wrap">
           <Section title="الأقسام">
             {departments.length === 0 && (
@@ -301,3 +290,4 @@ export default function OrgSettingsPanel({ onClose }: { onClose: () => void }) {
     </div>
   );
 }
+

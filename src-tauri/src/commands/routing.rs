@@ -89,6 +89,46 @@ pub fn route_document(
     Ok(())
 }
 
+#[derive(Debug, Serialize)]
+pub struct InboxEntry {
+    pub id: String,
+    pub document_id: String,
+    pub document_title: String,
+    pub routed_by: Option<String>,
+    pub routed_by_username: Option<String>,
+    pub routed_at: i64,
+    pub note: Option<String>,
+}
+
+/// "إحالاتي" — كل ما أُحيل للمستخدم الحالي، أحدثها أولًا (صندوق وارد حقيقي
+/// بدل دفن الإحالات داخل كل وثيقة على حدة)
+#[tauri::command]
+pub fn list_my_inbox(db: State<DbState>, session: State<SessionState>) -> Result<Vec<InboxEntry>, ArchiveError> {
+    let user = require_role(&session, ALL_ROLES)?;
+    let guard = require_conn!(db);
+    let conn = guard.as_ref().unwrap();
+
+    let mut stmt = conn.prepare(
+        "SELECT r.id, r.document_id, d.title, r.routed_by, u.username, r.routed_at, r.note
+         FROM document_routing r
+         JOIN documents d ON r.document_id = d.id
+         LEFT JOIN users u ON r.routed_by = u.id
+         WHERE r.routed_to_user_id = ?1 AND d.is_deleted = 0
+         ORDER BY r.routed_at DESC
+         LIMIT 100",
+    )?;
+    let items = stmt
+        .query_map(params![user.id], |r| {
+            Ok(InboxEntry {
+                id: r.get(0)?, document_id: r.get(1)?, document_title: r.get(2)?,
+                routed_by: r.get(3)?, routed_by_username: r.get(4)?, routed_at: r.get(5)?, note: r.get(6)?,
+            })
+        })?
+        .filter_map(Result::ok)
+        .collect();
+    Ok(items)
+}
+
 /// سجل إحالات وثيقة معيّنة — لأي مستخدم يملك صلاحية رؤية الوثيقة نفسها
 #[tauri::command]
 pub fn list_document_routing(
