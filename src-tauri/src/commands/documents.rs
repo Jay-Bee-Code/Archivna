@@ -103,44 +103,9 @@ pub(crate) const DOC_COLUMNS: &str = "id, title, category_id, file_hash, file_si
 /// إلى NULL لدى الطرف المستلم، ويُفشل المزامنة بالكامل إن غاب title/file_hash
 /// (حقلان إلزاميان) — اختبار تكامل حقيقي كشف هذا الخلل وأثبت الإصلاح.
 pub(crate) fn full_document_payload(conn: &Connection, id: &str) -> Result<serde_json::Value, ArchiveError> {
-    conn.query_row(
-        "SELECT title, category_id, file_hash, file_size, mime_type, ocr_text,
-                department_id, document_type_id, registry_number, confidentiality_level, status, metadata,
-                legal_hold, disposed_at, physical_location, physical_status, borrowed_by, borrowed_at,
-                created_by, created_at, updated_at, origin_node_id, is_deleted, correspondent_id
-         FROM documents WHERE id = ?1",
-        params![id],
-        |r| {
-            Ok(serde_json::json!({
-                "id": id,
-                "title": r.get::<_, String>(0)?,
-                "category_id": r.get::<_, Option<String>>(1)?,
-                "file_hash": r.get::<_, String>(2)?,
-                "file_size": r.get::<_, i64>(3)?,
-                "mime_type": r.get::<_, Option<String>>(4)?,
-                "ocr_text": r.get::<_, Option<String>>(5)?,
-                "department_id": r.get::<_, Option<String>>(6)?,
-                "document_type_id": r.get::<_, Option<String>>(7)?,
-                "registry_number": r.get::<_, Option<String>>(8)?,
-                "confidentiality_level": r.get::<_, i64>(9)?,
-                "status": r.get::<_, String>(10)?,
-                "metadata": r.get::<_, Option<String>>(11)?,
-                "legal_hold": r.get::<_, i64>(12)?,
-                "disposed_at": r.get::<_, Option<i64>>(13)?,
-                "physical_location": r.get::<_, Option<String>>(14)?,
-                "physical_status": r.get::<_, String>(15)?,
-                "borrowed_by": r.get::<_, Option<String>>(16)?,
-                "borrowed_at": r.get::<_, Option<i64>>(17)?,
-                "created_by": r.get::<_, Option<String>>(18)?,
-                "created_at": r.get::<_, i64>(19)?,
-                "updated_at": r.get::<_, Option<i64>>(20)?,
-                "origin_node_id": r.get::<_, String>(21)?,
-                "is_deleted": r.get::<_, i64>(22)?,
-                "correspondent_id": r.get::<_, Option<String>>(23)?,
-            }))
-        },
-    )
-    .map_err(|_| ArchiveError::Invalid("الوثيقة غير موجودة".into()))
+    // المنطق الفعلي في db/payload.rs (بلا Tauri) ليُختبَر مباشرة — راجع التعليق هناك
+    crate::db::payload::full_document_payload(conn, id)
+        .map_err(|_| ArchiveError::Invalid("الوثيقة غير موجودة".into()))
 }
 
 pub(crate) fn row_to_document(row: &rusqlite::Row) -> rusqlite::Result<Document> {

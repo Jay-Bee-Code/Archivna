@@ -1,8 +1,9 @@
 import { useEffect, useState, useCallback } from "react";
-import { api, Document, Category, UserPublic, errorMessage } from "../lib/api";
+import { api, Document, Category, Department, DocumentType, Correspondent, UserPublic, errorMessage } from "../lib/api";
 import DocumentCard from "../components/DocumentCard";
 import CategorySidebar from "../components/CategorySidebar";
 import UploadModal from "../components/UploadModal";
+import DocumentDetailsDrawer from "../components/DocumentDetailsDrawer";
 import EmptyState from "../components/EmptyState";
 import { IconSearch, IconUpload } from "../components/icons/Icon";
 
@@ -22,11 +23,19 @@ export default function ArchivePage({
   const [error, setError] = useState<string | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [ocrAvailable, setOcrAvailable] = useState<boolean | null>(null);
+  // جداول الأسماء: البطاقة واللوحة تعرضان أسماء القسم/النوع/الجهة بدل المعرّفات الخام
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [types, setTypes] = useState<DocumentType[]>([]);
+  const [correspondents, setCorrespondents] = useState<Correspondent[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const canWrite = user.role === "admin" || user.role === "archivist";
 
   useEffect(() => {
     api.ocrStatus().then(setOcrAvailable).catch(() => setOcrAvailable(false));
+    api.listDepartments().then(setDepartments).catch(() => {});
+    api.listDocumentTypes().then(setTypes).catch(() => {});
+    api.listCorrespondents().then(setCorrespondents).catch(() => {});
   }, []);
 
   const loadCategories = useCallback(async () => {
@@ -92,7 +101,25 @@ export default function ArchivePage({
     await loadCategories();
   }
 
+  async function handleDeleteCategory(id: string) {
+    setError(null);
+    try {
+      await api.deleteCategory(id);
+      if (activeCategory === id) setActiveCategory(null);
+      await loadCategories();
+    } catch (err) {
+      // الـ backend يرفض حذف فئة تحتوي وثائق أو فئات فرعية — الرسالة واضحة للمستخدم
+      setError(errorMessage(err));
+    }
+  }
+
+  async function handleChanged() {
+    await Promise.all([loadDocuments(), loadCategories()]);
+  }
+
   const activeCategoryName = categories.find((c) => c.id === activeCategory)?.name;
+  // اللوحة تشتق وثيقتها من القائمة الحالية، فتتحدّث تلقائيًا بعد أي تغيير
+  const selectedDoc = selectedId ? documents.find((d) => d.id === selectedId) ?? null : null;
 
   return (
     <div className="flex h-full">
@@ -102,6 +129,7 @@ export default function ArchivePage({
           activeCategory={activeCategory}
           onSelect={setActiveCategory}
           onAddCategory={canWrite ? handleAddCategory : async () => {}}
+          onDeleteCategory={user.role === "admin" ? handleDeleteCategory : undefined}
         />
       </aside>
 
@@ -165,11 +193,30 @@ export default function ArchivePage({
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
             {documents.map((doc) => (
-              <DocumentCard key={doc.id} doc={doc} canWrite={canWrite} onDelete={handleDelete} />
+              <DocumentCard
+                key={doc.id}
+                doc={doc}
+                canWrite={canWrite}
+                onDelete={handleDelete}
+                onOpen={() => setSelectedId(doc.id)}
+              />
             ))}
           </div>
         )}
       </div>
+
+      {selectedDoc && (
+        <DocumentDetailsDrawer
+          doc={selectedDoc}
+          role={user.role}
+          categoryName={categories.find((c) => c.id === selectedDoc.category_id)?.name ?? null}
+          departmentName={departments.find((d) => d.id === selectedDoc.department_id)?.name_ar ?? null}
+          typeName={types.find((t) => t.id === selectedDoc.document_type_id)?.name ?? null}
+          correspondent={correspondents.find((c) => c.id === selectedDoc.correspondent_id) ?? null}
+          onClose={() => setSelectedId(null)}
+          onChanged={handleChanged}
+        />
+      )}
 
       {pendingFile && (
         <UploadModal

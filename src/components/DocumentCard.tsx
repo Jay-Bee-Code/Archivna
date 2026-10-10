@@ -29,10 +29,12 @@ export default function DocumentCard({
   doc,
   canWrite,
   onDelete,
+  onOpen,
 }: {
   doc: Document;
   canWrite: boolean;
   onDelete: (id: string) => void;
+  onOpen: () => void;
 }) {
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +57,12 @@ export default function DocumentCard({
   return (
     <div className="group border border-border-light dark:border-white/10 rounded-xl p-4 bg-white dark:bg-white/[0.03] hover:border-accent/40 hover:shadow-md dark:hover:shadow-black/20 transition-all flex flex-col gap-2.5">
       <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
+        <button
+          type="button"
+          onClick={onOpen}
+          title="عرض التفاصيل"
+          className="group/title flex items-center gap-2 min-w-0 text-start cursor-pointer"
+        >
           <span className="shrink-0 w-8 h-8 rounded-lg bg-primary/10 dark:bg-accent/15 flex items-center justify-center text-primary dark:text-accent text-[10px] font-bold uppercase">
             {(() => {
               const ext = doc.title.includes(".") ? doc.title.split(".").pop() : null;
@@ -64,14 +71,14 @@ export default function DocumentCard({
             })()}
           </span>
           <div className="min-w-0">
-            <h3 className="font-semibold text-text-primary dark:text-white truncate">{doc.title}</h3>
+            <h3 className="font-semibold text-text-primary dark:text-white truncate group-hover/title:text-accent transition-colors">{doc.title}</h3>
             {doc.registry_number && (
               <p className="text-[11px] text-text-secondary dark:text-white/35 font-mono truncate">
                 {doc.registry_number}
               </p>
             )}
           </div>
-        </div>
+        </button>
         {canWrite && (
           <button
             onClick={() => onDelete(doc.id)}

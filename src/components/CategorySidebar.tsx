@@ -1,17 +1,20 @@
 import { useState } from "react";
 import { Category } from "../lib/api";
-import { IconPlus } from "./icons/Icon";
+import { IconPlus, IconTrash } from "./icons/Icon";
 
 export default function CategorySidebar({
   categories,
   activeCategory,
   onSelect,
   onAddCategory,
+  onDeleteCategory,
 }: {
   categories: Category[];
   activeCategory: string | null;
   onSelect: (id: string | null) => void;
   onAddCategory: (name: string) => Promise<void>;
+  /** غير معرَّف = لا صلاحية حذف (الحذف للمدير فقط في الـ backend) */
+  onDeleteCategory?: (id: string) => void;
 }) {
   const [newName, setNewName] = useState("");
   const [adding, setAdding] = useState(false);
@@ -46,24 +49,35 @@ export default function CategorySidebar({
       </button>
 
       {categories.map((cat) => (
-        <button
-          key={cat.id}
-          onClick={() => onSelect(cat.id)}
-          className={`text-start px-3 py-2 rounded-lg text-sm flex items-center justify-between transition-colors ${
-            activeCategory === cat.id
-              ? "bg-primary dark:bg-accent/25 text-white dark:text-white"
-              : "text-text-primary dark:text-white/70 hover:bg-black/5 dark:hover:bg-white/5"
-          }`}
-        >
-          <span className="truncate">{cat.name}</span>
-          <span
-            className={`text-[11px] tabular-nums ${
-              activeCategory === cat.id ? "text-white/70" : "text-text-secondary dark:text-white/30"
+        // الصف div وليس button: زر الحذف لا يصحّ تعشيشه داخل زر الاختيار (HTML غير صالح)
+        <div key={cat.id} className="group flex items-stretch gap-0.5">
+          <button
+            onClick={() => onSelect(cat.id)}
+            className={`flex-1 min-w-0 text-start px-3 py-2 rounded-lg text-sm flex items-center justify-between transition-colors ${
+              activeCategory === cat.id
+                ? "bg-primary dark:bg-accent/25 text-white dark:text-white"
+                : "text-text-primary dark:text-white/70 hover:bg-black/5 dark:hover:bg-white/5"
             }`}
           >
-            {cat.document_count}
-          </span>
-        </button>
+            <span className="truncate">{cat.name}</span>
+            <span
+              className={`text-[11px] tabular-nums ${
+                activeCategory === cat.id ? "text-white/70" : "text-text-secondary dark:text-white/30"
+              }`}
+            >
+              {cat.document_count}
+            </span>
+          </button>
+          {onDeleteCategory && (
+            <button
+              onClick={() => onDeleteCategory(cat.id)}
+              title="حذف الفئة (تُرفض إن احتوت وثائق)"
+              className="shrink-0 w-0 group-hover:w-7 overflow-hidden flex items-center justify-center rounded-lg text-text-secondary/50 hover:text-danger hover:bg-danger/5 transition-all"
+            >
+              <IconTrash size={13} />
+            </button>
+          )}
+        </div>
       ))}
 
       <form onSubmit={handleAdd} className="mt-3 flex gap-1 px-1">
