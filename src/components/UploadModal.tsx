@@ -11,12 +11,15 @@ import {
   errorMessage,
 } from "../lib/api";
 import { flattenDeptTree, deptIndent } from "../lib/deptTree";
+import Bidi from "./Bidi";
+import { useEscape } from "../lib/useEscape";
 
 export default function UploadModal({
   file,
   categories,
   defaultCategoryId,
   defaultDepartmentId,
+  ocrAvailable,
   onClose,
   onUploaded,
 }: {
@@ -24,9 +27,11 @@ export default function UploadModal({
   categories: Category[];
   defaultCategoryId: string | null;
   defaultDepartmentId: string | null;
+  ocrAvailable: boolean | null;
   onClose: () => void;
   onUploaded: () => void;
 }) {
+  useEscape(onClose);
   const [title, setTitle] = useState(file.name);
   const [categoryId, setCategoryId] = useState<string | null>(defaultCategoryId);
   const [departmentId, setDepartmentId] = useState<string | null>(defaultDepartmentId);
@@ -98,7 +103,12 @@ export default function UploadModal({
         className="w-full max-w-md bg-white dark:bg-[#132033] border border-border-light dark:border-white/10 rounded-2xl p-6 flex flex-col gap-3.5 max-h-[90vh] overflow-y-auto"
       >
         <h2 className="text-base font-bold text-primary dark:text-white">رفع وثيقة جديدة</h2>
-        <p className="text-xs text-text-secondary dark:text-white/40 truncate">{file.name}</p>
+        <p className="text-xs text-text-secondary dark:text-white/40 truncate"><Bidi>{file.name}</Bidi></p>
+        {file.type.startsWith("image/") && ocrAvailable === false && (
+          <p className="text-xs text-warning bg-warning/10 rounded-lg px-3 py-2 leading-relaxed">
+            OCR غير مفعَّل على هذا الجهاز، فلن يُفهرَس النص داخل هذه الصورة للبحث. ثبّت Tesseract لتفعيله (راجع SETUP.md).
+          </p>
+        )}
 
         <label className="flex flex-col gap-1">
           <span className="text-xs text-text-secondary dark:text-white/50">العنوان</span>

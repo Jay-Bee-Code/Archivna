@@ -2,10 +2,10 @@ use crate::commands::auth::{
     require_role, SessionState, ROLE_ADMIN, ROLE_ARCHIVIST, ROLE_REVIEWER, ROLE_VIEWER,
 };
 use crate::commands::documents::ArchiveError;
-use crate::crypto;
-use crate::db::{self, DbState, VaultKeyState};
-use crate::sync::net::SyncCore;
-use crate::sync::{self, store, PeerView, SyncState};
+use govt_archive_system::crypto;
+use govt_archive_system::db::{self, DbState, VaultKeyState};
+use govt_archive_system::sync::net::SyncCore;
+use govt_archive_system::sync::{self, store, PeerView, SyncState};
 use rusqlite::Connection;
 use serde::Serialize;
 use std::sync::{Arc, Mutex};

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, Document, UserPublic, errorMessage } from "../lib/api";
+import Bidi from "../components/Bidi";
 import {
   IconArchive,
   IconInbox,
@@ -142,9 +143,9 @@ export default function DashboardPage({
                 key={d.id}
                 className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-black/[0.02] dark:bg-white/[0.03]"
               >
-                <span className="text-sm text-text-primary dark:text-white truncate">{d.title}</span>
+                <span className="text-sm text-text-primary dark:text-white truncate"><Bidi>{d.title}</Bidi></span>
                 <span className="text-[11px] text-text-secondary dark:text-white/40 shrink-0">
-                  {d.registry_number ? `${d.registry_number} • ` : ""}
+                  {d.registry_number && (<><Bidi>{d.registry_number}</Bidi> • </>)}
                   {formatDate(d.created_at)}
                 </span>
               </div>

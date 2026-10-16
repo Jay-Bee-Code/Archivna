@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, errorMessage } from "../lib/api";
+import Bidi from "./Bidi";
+import { useEscape } from "../lib/useEscape";
 
 export default function QrModal({
   documentId,
@@ -10,6 +12,7 @@ export default function QrModal({
   title: string;
   onClose: () => void;
 }) {
+  useEscape(onClose);
   const [svg, setSvg] = useState<string | null>(null);
   const [payload, setPayload] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +48,7 @@ export default function QrModal({
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-xs bg-white dark:bg-[#132033] border border-border-light dark:border-white/10 rounded-2xl p-6 flex flex-col items-center gap-3 text-center"
       >
-        <h2 className="text-sm font-bold text-primary dark:text-white truncate w-full">{title}</h2>
+        <h2 className="text-sm font-bold text-primary dark:text-white truncate w-full"><Bidi>{title}</Bidi></h2>
 
         {error && <p className="text-sm text-danger">{error}</p>}
         {!svg && !error && <p className="text-xs text-text-secondary">جارٍ التوليد…</p>}
@@ -55,7 +58,7 @@ export default function QrModal({
             dangerouslySetInnerHTML={{ __html: svg }}
           />
         )}
-        {payload && <p className="text-[11px] text-text-secondary dark:text-white/40 font-mono break-all">{payload}</p>}
+        {payload && <p className="text-[11px] text-text-secondary dark:text-white/40 font-mono break-all"><Bidi>{payload}</Bidi></p>}
 
         <p className="text-[11px] text-text-secondary dark:text-white/40">
           اطبع هذا الرمز على غلاف الملف الورقي لربطه بالنسخة الرقمية

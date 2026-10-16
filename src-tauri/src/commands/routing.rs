@@ -1,7 +1,7 @@
 use crate::commands::auth::{bypasses_visibility_filter, require_role, SessionState, ALL_ROLES, ROLE_ADMIN, ROLE_ARCHIVIST};
 use crate::commands::documents::ArchiveError;
-use crate::db::DbState;
-use crate::sync::{store as sync_store, SyncState};
+use govt_archive_system::db::DbState;
+use govt_archive_system::sync::{store as sync_store, SyncState};
 use chrono::Utc;
 use rusqlite::params;
 use serde::Serialize;
@@ -107,26 +107,20 @@ pub fn list_my_inbox(db: State<DbState>, session: State<SessionState>) -> Result
     let user = require_role(&session, ALL_ROLES)?;
     let guard = require_conn!(db);
     let conn = guard.as_ref().unwrap();
-
-    let mut stmt = conn.prepare(
-        "SELECT r.id, r.document_id, d.title, r.routed_by, u.username, r.routed_at, r.note
-         FROM document_routing r
-         JOIN documents d ON r.document_id = d.id
-         LEFT JOIN users u ON r.routed_by = u.id
-         WHERE r.routed_to_user_id = ?1 AND d.is_deleted = 0
-         ORDER BY r.routed_at DESC
-         LIMIT 100",
-    )?;
-    let items = stmt
-        .query_map(params![user.id], |r| {
-            Ok(InboxEntry {
-                id: r.get(0)?, document_id: r.get(1)?, document_title: r.get(2)?,
-                routed_by: r.get(3)?, routed_by_username: r.get(4)?, routed_at: r.get(5)?, note: r.get(6)?,
-            })
-        })?
-        .filter_map(Result::ok)
-        .collect();
-    Ok(items)
+    // المنطق الفعلي في db/routing.rs (بلا Tauri) ليُختبر مباشرة
+    let rows = govt_archive_system::db::routing::inbox_for(conn, &user.id)?;
+    Ok(rows
+        .into_iter()
+        .map(|r| InboxEntry {
+            id: r.id,
+            document_id: r.document_id,
+            document_title: r.document_title,
+            routed_by: r.routed_by,
+            routed_by_username: r.routed_by_username,
+            routed_at: r.routed_at,
+            note: r.note,
+        })
+        .collect())
 }
 
 /// سجل إحالات وثيقة معيّنة — لأي مستخدم يملك صلاحية رؤية الوثيقة نفسها

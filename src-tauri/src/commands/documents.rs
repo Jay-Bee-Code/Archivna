@@ -2,9 +2,9 @@ use crate::commands::auth::{
     bypasses_visibility_filter, require_role, SessionState, ROLE_ADMIN, ROLE_ARCHIVIST,
     ROLE_REVIEWER, ROLE_VIEWER,
 };
-use crate::crypto;
-use crate::db::{DbState, VaultKeyState};
-use crate::sync::{store as sync_store, SyncError, SyncState};
+use govt_archive_system::crypto;
+use govt_archive_system::db::{DbState, VaultKeyState};
+use govt_archive_system::sync::{store as sync_store, SyncError, SyncState};
 use chrono::{Datelike, Utc};
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
@@ -104,7 +104,7 @@ pub(crate) const DOC_COLUMNS: &str = "id, title, category_id, file_hash, file_si
 /// (حقلان إلزاميان) — اختبار تكامل حقيقي كشف هذا الخلل وأثبت الإصلاح.
 pub(crate) fn full_document_payload(conn: &Connection, id: &str) -> Result<serde_json::Value, ArchiveError> {
     // المنطق الفعلي في db/payload.rs (بلا Tauri) ليُختبَر مباشرة — راجع التعليق هناك
-    crate::db::payload::full_document_payload(conn, id)
+    govt_archive_system::db::payload::full_document_payload(conn, id)
         .map_err(|_| ArchiveError::Invalid("الوثيقة غير موجودة".into()))
 }
 
@@ -196,7 +196,7 @@ pub fn add_document(
     let hash = format!("{:x}", hasher.finalize());
 
     // OCR على المحتوى الصافي قبل التشفير — لا حاجة لفك تشفير لاحقًا لاستخراج النص
-    let ocr_text = crate::ocr::extract_text(&bytes, input.mime_type.as_deref());
+    let ocr_text = govt_archive_system::ocr::extract_text(&bytes, input.mime_type.as_deref());
 
     let key = vault_key
         .0
@@ -208,7 +208,7 @@ pub fn add_document(
         .path()
         .app_data_dir()
         .map_err(|e| ArchiveError::Io(format!("تعذر تحديد مجلد بيانات التطبيق: {e}")))?;
-    let vault = crate::db::vault_dir(&app_data_dir);
+    let vault = govt_archive_system::db::vault_dir(&app_data_dir);
 
     let sub_dir = vault.join(&hash[0..2]);
     fs::create_dir_all(&sub_dir).map_err(|e| ArchiveError::Io(e.to_string()))?;
@@ -284,7 +284,7 @@ pub fn add_document(
 /// هل Tesseract OCR متاح على هذا الجهاز؟
 #[tauri::command]
 pub fn ocr_status() -> bool {
-    crate::ocr::is_available()
+    govt_archive_system::ocr::is_available()
 }
 
 /// جلب قائمة الوثائق (غير المحذوفة)، مقيَّدة بالقسم ومستوى الاطّلاع لغير المدير

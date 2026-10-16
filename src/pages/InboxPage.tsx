@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, InboxEntry, errorMessage } from "../lib/api";
+import Bidi from "../components/Bidi";
 import EmptyState from "../components/EmptyState";
 import { IconInbox, IconSearch } from "../components/icons/Icon";
 
@@ -38,9 +39,9 @@ export default function InboxPage({ onOpenInArchive }: { onOpenInArchive: (title
               className="bg-white dark:bg-white/[0.03] border border-border-light dark:border-white/10 rounded-xl p-4 flex items-start justify-between gap-3"
             >
               <div className="min-w-0">
-                <p className="font-medium text-text-primary dark:text-white truncate">{it.document_title}</p>
+                <p className="font-medium text-text-primary dark:text-white truncate"><Bidi>{it.document_title}</Bidi></p>
                 <p className="text-xs text-text-secondary dark:text-white/40 mt-0.5">
-                  من {it.routed_by_username || "—"} • {formatDate(it.routed_at)}
+                  من <Bidi>{it.routed_by_username || "—"}</Bidi> • {formatDate(it.routed_at)}
                 </p>
                 {it.note && (
                   <p className="text-sm text-text-primary dark:text-white/70 mt-2 bg-black/[0.03] dark:bg-white/[0.04] rounded-lg px-3 py-2">

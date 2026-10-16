@@ -2,16 +2,11 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod commands;
-mod crypto;
-mod db;
-mod ocr;
-mod qr;
-mod sync;
 
 use commands::auth::SessionState;
-use db::{DbState, VaultKeyState};
+use govt_archive_system::db::{DbState, VaultKeyState};
+use govt_archive_system::sync::SyncState;
 use std::sync::{Arc, Mutex};
-use sync::SyncState;
 
 fn main() {
     tauri::Builder::default()

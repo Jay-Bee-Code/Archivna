@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, UserPublic, RoutingEntry, errorMessage } from "../lib/api";
+import Bidi from "./Bidi";
+import { useEscape } from "../lib/useEscape";
 import { IconRoute, IconClose } from "./icons/Icon";
 
 function formatDate(ts: number): string {
@@ -15,6 +17,7 @@ export default function RoutingModal({
   title: string;
   onClose: () => void;
 }) {
+  useEscape(onClose);
   const [users, setUsers] = useState<UserPublic[]>([]);
   const [history, setHistory] = useState<RoutingEntry[]>([]);
   const [toUserId, setToUserId] = useState("");
@@ -57,7 +60,7 @@ export default function RoutingModal({
       >
         <div className="flex items-center justify-between">
           <h2 className="flex items-center gap-1.5 text-sm font-bold text-primary dark:text-white truncate min-w-0">
-            <IconRoute size={15} className="shrink-0" /> <span className="truncate">إحالة: {title}</span>
+            <IconRoute size={15} className="shrink-0" /> <span className="truncate">إحالة: <Bidi>{title}</Bidi></span>
           </h2>
           <button
             onClick={onClose}

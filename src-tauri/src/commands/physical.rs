@@ -1,7 +1,7 @@
 use crate::commands::auth::{bypasses_visibility_filter, require_role, SessionState, ALL_ROLES, ROLE_ADMIN, ROLE_ARCHIVIST};
 use crate::commands::documents::{full_document_payload, ArchiveError};
-use crate::db::DbState;
-use crate::sync::{store as sync_store, SyncState};
+use govt_archive_system::db::DbState;
+use govt_archive_system::sync::{store as sync_store, SyncState};
 use chrono::Utc;
 use rusqlite::params;
 use serde::Serialize;
@@ -100,6 +100,6 @@ pub fn get_document_qr(
     }
 
     let payload = registry_number.unwrap_or(id);
-    let svg = crate::qr::generate_svg(&payload).map_err(ArchiveError::Invalid)?;
+    let svg = govt_archive_system::qr::generate_svg(&payload).map_err(ArchiveError::Invalid)?;
     Ok(QrResult { svg, payload })
 }

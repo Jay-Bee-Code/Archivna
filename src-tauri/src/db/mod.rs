@@ -4,6 +4,8 @@ use std::sync::{Arc, Mutex};
 
 /// اتصال قاعدة البيانات — None قبل فتح الخزنة بالعبارة السرية
 pub mod payload;
+pub mod retention;
+pub mod routing;
 
 pub struct DbState(pub Arc<Mutex<Option<Connection>>>);
 

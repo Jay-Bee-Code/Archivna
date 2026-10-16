@@ -1,7 +1,7 @@
 use crate::commands::documents::ArchiveError;
-use crate::crypto;
-use crate::db::{self, DbState, VaultKeyState};
-use crate::sync::{store as sync_store, SyncState};
+use govt_archive_system::crypto;
+use govt_archive_system::db::{self, DbState, VaultKeyState};
+use govt_archive_system::sync::{store as sync_store, SyncState};
 use chrono::Utc;
 use rusqlite::{params, OptionalExtension};
 use serde::{Deserialize, Serialize};

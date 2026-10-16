@@ -1,7 +1,7 @@
 use crate::commands::auth::{require_role, SessionState, ALL_ROLES, ROLE_ADMIN, ROLE_ARCHIVIST};
 use crate::commands::documents::ArchiveError;
-use crate::db::DbState;
-use crate::sync::{store as sync_store, SyncState};
+use govt_archive_system::db::DbState;
+use govt_archive_system::sync::{store as sync_store, SyncState};
 use chrono::Utc;
 use rusqlite::params;
 use serde::{Deserialize, Serialize};

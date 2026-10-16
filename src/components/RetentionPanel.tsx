@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, Document, DisposalRecord, errorMessage } from "../lib/api";
 import { IconScale, IconRecycle } from "./icons/Icon";
+import Bidi from "./Bidi";
 
 function formatDate(ts: number): string {
   return new Date(ts * 1000).toLocaleDateString("ar-DZ", { year: "numeric", month: "long", day: "numeric" });
@@ -82,10 +83,10 @@ export default function RetentionPanel() {
               <div key={d.id} className="border border-border-light dark:border-white/10 rounded-lg p-3 flex flex-col gap-2">
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-text-primary dark:text-white truncate">{d.title}</p>
+                    <p className="text-sm font-medium text-text-primary dark:text-white truncate"><Bidi>{d.title}</Bidi></p>
                     <p className="text-[11px] text-text-secondary dark:text-white/40">
                       رُفعت في {formatDate(d.created_at)}
-                      {d.registry_number && ` • ${d.registry_number}`}
+                      {d.registry_number && (<> • <Bidi>{d.registry_number}</Bidi></>)}
                     </p>
                   </div>
                   {d.legal_hold && (
@@ -143,10 +144,10 @@ export default function RetentionPanel() {
             )}
             {log.map((r) => (
               <div key={r.id} className="border border-border-light dark:border-white/10 rounded-lg p-3">
-                <p className="text-sm text-text-primary dark:text-white">{r.title}</p>
+                <p className="text-sm text-text-primary dark:text-white"><Bidi>{r.title}</Bidi></p>
                 <p className="text-[11px] text-text-secondary dark:text-white/40">
                   أُتلفت في {formatDate(r.disposed_at)}
-                  {r.registry_number && ` • ${r.registry_number}`}
+                  {r.registry_number && (<> • <Bidi>{r.registry_number}</Bidi></>)}
                   {r.reason && ` • السبب: ${r.reason}`}
                 </p>
               </div>

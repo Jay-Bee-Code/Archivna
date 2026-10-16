@@ -9,6 +9,7 @@ import {
 } from "../lib/api";
 import { flattenDeptTree, deptIndent } from "../lib/deptTree";
 import { IconUsers, IconPlus } from "../components/icons/Icon";
+import Bidi from "../components/Bidi";
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "مدير",
@@ -90,7 +91,7 @@ export default function UsersPage() {
                   <p className="text-sm text-text-primary dark:text-white truncate">
                     {u.full_name || u.username}
                     {u.full_name && (
-                      <span className="text-text-secondary dark:text-white/40 text-xs"> @{u.username}</span>
+                      <span className="text-text-secondary dark:text-white/40 text-xs"> <Bidi>{`@${u.username}`}</Bidi></span>
                     )}
                   </p>
                   <p className="text-[11px] text-text-secondary dark:text-white/40">

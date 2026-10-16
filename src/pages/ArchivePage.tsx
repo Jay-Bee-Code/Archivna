@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { api, Document, Category, Department, DocumentType, Correspondent, UserPublic, errorMessage } from "../lib/api";
-import DocumentCard from "../components/DocumentCard";
+import DocumentTable from "../components/DocumentTable";
 import CategorySidebar from "../components/CategorySidebar";
 import UploadModal from "../components/UploadModal";
 import DocumentDetailsDrawer from "../components/DocumentDetailsDrawer";
@@ -123,7 +123,7 @@ export default function ArchivePage({
 
   return (
     <div className="flex h-full">
-      <aside className="w-52 shrink-0 border-e border-border-light dark:border-white/10 p-4 hidden md:block overflow-y-auto">
+      <aside className="w-52 shrink-0 border-e border-border-light dark:border-white/10 p-4 hidden xl:block overflow-y-auto">
         <CategorySidebar
           categories={categories}
           activeCategory={activeCategory}
@@ -166,13 +166,31 @@ export default function ArchivePage({
           )}
         </div>
 
-        {canWrite && ocrAvailable === false && (
-          <p className="text-[11px] text-text-secondary dark:text-white/40 mb-4">
-            OCR غير مفعَّل على هذا الجهاز — النصوص داخل الصور لن تُفهرَس للبحث. راجع SETUP.md لتثبيت Tesseract.
+        {error && <div className="mb-4 text-sm text-danger bg-danger/10 rounded-md p-3">{error}</div>}
+
+        <div className="xl:hidden flex gap-2 overflow-x-auto pb-2 mb-3" role="tablist" aria-label="الفئات">
+          {[{ id: null as string | null, name: "كل الوثائق" }, ...categories].map((c) => (
+            <button
+              key={c.id ?? "all"}
+              role="tab"
+              aria-selected={activeCategory === c.id}
+              onClick={() => setActiveCategory(c.id)}
+              className={`shrink-0 text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                activeCategory === c.id
+                  ? "bg-primary dark:bg-accent/25 border-transparent text-white"
+                  : "border-border-light dark:border-white/10 text-text-secondary dark:text-white/60 hover:bg-black/5 dark:hover:bg-white/5"
+              }`}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+
+        {documents.length > 0 && (
+          <p className="text-xs text-text-secondary dark:text-white/40 mb-2.5">
+            {documents.length} وثيقة{query.trim() ? " مطابقة" : ""}
           </p>
         )}
-
-        {error && <div className="mb-4 text-sm text-danger bg-danger/10 rounded-md p-3">{error}</div>}
 
         {loading && documents.length === 0 ? (
           <div className="flex items-center gap-2 text-text-secondary dark:text-white/40 text-sm py-10 justify-center">
@@ -191,17 +209,14 @@ export default function ArchivePage({
             }
           />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-            {documents.map((doc) => (
-              <DocumentCard
-                key={doc.id}
-                doc={doc}
-                canWrite={canWrite}
-                onDelete={handleDelete}
-                onOpen={() => setSelectedId(doc.id)}
-              />
-            ))}
-          </div>
+          <DocumentTable
+            docs={documents}
+            canWrite={canWrite}
+            types={types}
+            departments={departments}
+            onOpen={setSelectedId}
+            onDelete={handleDelete}
+          />
         )}
       </div>
 
@@ -224,6 +239,7 @@ export default function ArchivePage({
           categories={categories}
           defaultCategoryId={activeCategory}
           defaultDepartmentId={user.department_id}
+          ocrAvailable={ocrAvailable}
           onClose={() => setPendingFile(null)}
           onUploaded={handleUploaded}
         />

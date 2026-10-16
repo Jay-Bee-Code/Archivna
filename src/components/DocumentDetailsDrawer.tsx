@@ -11,6 +11,8 @@ import {
   errorMessage,
 } from "../lib/api";
 import { IconClose, IconBox, IconScale } from "./icons/Icon";
+import Bidi from "./Bidi";
+import { useEscape } from "../lib/useEscape";
 
 /** الحالات التي يختارها المراجع يدويًا — "disposed" تُضبط حصرًا عبر أمر الإتلاف */
 const SELECTABLE_STATUSES = ["draft", "in_review", "approved", "archived", "superseded"];
@@ -27,9 +29,10 @@ function formatSize(bytes: number): string {
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-start justify-between gap-4 py-2 border-b border-border-light/60 dark:border-white/5 last:border-0">
-      <dt className="text-xs text-text-secondary dark:text-white/40 shrink-0">{label}</dt>
-      <dd className="text-sm text-text-primary dark:text-white text-end min-w-0 break-words">{children}</dd>
+    // شبكة بعمودين: القيمة بجوار اسمها مباشرة (كانت تُدفع لأقصى الطرف الآخر، 350px من العين)
+    <div className="grid grid-cols-[7rem_1fr] gap-3 py-2.5 border-b border-border-light/60 dark:border-white/5 last:border-0">
+      <dt className="text-xs text-text-secondary dark:text-white/40 pt-0.5">{label}</dt>
+      <dd className="text-sm text-text-primary dark:text-white min-w-0 break-words text-start">{children}</dd>
     </div>
   );
 }
@@ -61,6 +64,7 @@ export default function DocumentDetailsDrawer({
   onClose: () => void;
   onChanged: () => void;
 }) {
+  useEscape(onClose);
   // المراجع والمدير يغيّران الحالة؛ الأرشيفي والمدير يديران الأصل الورقي
   const canReview = role === "admin" || role === "reviewer";
   const canEditPhysical = role === "admin" || role === "archivist";
@@ -129,7 +133,7 @@ export default function DocumentDetailsDrawer({
     physicalStatus !== doc.physical_status || (location.trim() || null) !== (doc.physical_location ?? null);
 
   return (
-    <div className="fixed inset-0 z-40 flex" onClick={onClose}>
+    <div className="fixed inset-0 z-40 flex" onClick={onClose} role="dialog" aria-modal="true" aria-label="تفاصيل الوثيقة">
       <div className="flex-1 bg-black/40" />
       <aside
         onClick={(e) => e.stopPropagation()}
@@ -137,9 +141,9 @@ export default function DocumentDetailsDrawer({
       >
         <div className="flex items-start justify-between gap-3 p-5 border-b border-border-light dark:border-white/10">
           <div className="min-w-0">
-            <h2 className="text-base font-bold text-primary dark:text-white break-words">{doc.title}</h2>
+            <h2 className="text-base font-bold text-primary dark:text-white break-words"><Bidi>{doc.title}</Bidi></h2>
             {doc.registry_number && (
-              <p className="text-xs font-mono text-text-secondary dark:text-white/40 mt-1">{doc.registry_number}</p>
+              <p className="text-xs font-mono text-text-secondary dark:text-white/40 mt-1"><Bidi>{doc.registry_number}</Bidi></p>
             )}
           </div>
           <button
@@ -159,7 +163,7 @@ export default function DocumentDetailsDrawer({
               <Row label="الفئة">{categoryName ?? "—"}</Row>
               <Row label="جهة المراسلة">
                 {correspondent
-                  ? `${correspondent.name} (${CORRESPONDENT_KIND_LABELS[correspondent.kind] || correspondent.kind})`
+                  ? <>{correspondent.name} <span className="text-text-secondary dark:text-white/40">({CORRESPONDENT_KIND_LABELS[correspondent.kind] || correspondent.kind})</span></>
                   : "—"}
               </Row>
               <Row label="مستوى السرية">{CONFIDENTIALITY_LABELS[doc.confidentiality_level]}</Row>

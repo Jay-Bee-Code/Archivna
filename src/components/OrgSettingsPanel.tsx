@@ -1,16 +1,19 @@
 import { useEffect, useState } from "react";
 import { api, Department, DocumentType, Correspondent, CORRESPONDENT_KIND_LABELS, errorMessage } from "../lib/api";
 import { IconSettings, IconTrash, IconPlus } from "./icons/Icon";
+import Bidi from "./Bidi";
 
 function Section({
   title,
   children,
+  hidden = false,
 }: {
   title: string;
   children: React.ReactNode;
+  hidden?: boolean;
 }) {
   return (
-    <div className="flex-1 min-w-0">
+    <div className={`flex-1 min-w-0 ${hidden ? "hidden" : ""}`}>
       <h3 className="text-xs font-semibold text-text-secondary dark:text-white/40 uppercase tracking-wide mb-2">
         {title}
       </h3>
@@ -57,7 +60,7 @@ function DeptRow({
         <span className="truncate text-text-primary dark:text-white flex items-center gap-1.5">
           {depth > 0 && <span className="text-text-secondary dark:text-white/30">└</span>}
           {node.name_ar}
-          {node.code && <span className="text-text-secondary dark:text-white/40 text-xs">({node.code})</span>}
+          {node.code && <span className="text-text-secondary dark:text-white/40 text-xs">(<Bidi>{node.code}</Bidi>)</span>}
         </span>
         <div className="flex items-center gap-2 shrink-0">
           <button
@@ -90,6 +93,7 @@ export default function OrgSettingsPanel() {
   const [newDeptParent, setNewDeptParent] = useState<string | null>(null);
   const [newTypeName, setNewTypeName] = useState("");
 
+  const [tab, setTab] = useState<"depts" | "types" | "corrs">("depts");
   const [newCorrName, setNewCorrName] = useState("");
   const [newCorrKind, setNewCorrKind] = useState("other");
 
@@ -194,8 +198,29 @@ export default function OrgSettingsPanel() {
       {error && <p className="text-sm text-danger bg-danger/10 rounded-md p-2">{error}</p>}
 
       <div className="bg-white dark:bg-white/[0.03] border border-border-light dark:border-white/10 rounded-2xl p-6">
-        <div className="flex flex-col sm:flex-row gap-6 flex-wrap">
-          <Section title="الأقسام">
+        <div className="flex gap-1 mb-5 border-b border-border-light dark:border-white/10" role="tablist">
+          {([
+            ["depts", "الأقسام", departments.length],
+            ["types", "أنواع الوثائق", types.length],
+            ["corrs", "جهات المراسلة", correspondents.length],
+          ] as const).map(([id, label, n]) => (
+            <button
+              key={id}
+              role="tab"
+              aria-selected={tab === id}
+              onClick={() => setTab(id)}
+              className={`px-4 py-2.5 text-sm -mb-px border-b-2 transition-colors ${
+                tab === id
+                  ? "border-accent text-accent font-medium"
+                  : "border-transparent text-text-secondary dark:text-white/50 hover:text-text-primary dark:hover:text-white"
+              }`}
+            >
+              {label} <span className="text-[11px] opacity-60 tabular-nums">{n}</span>
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-col gap-6">
+          <Section title="الأقسام" hidden={tab !== "depts"}>
             {departments.length === 0 && (
               <p className="text-xs text-text-secondary dark:text-white/40">لا أقسام بعد.</p>
             )}
@@ -224,7 +249,7 @@ export default function OrgSettingsPanel() {
             </form>
           </Section>
 
-          <Section title="أنواع الوثائق">
+          <Section title="أنواع الوثائق" hidden={tab !== "types"}>
             {types.length === 0 && (
               <p className="text-xs text-text-secondary dark:text-white/40">لا أنواع بعد.</p>
             )}
@@ -254,7 +279,7 @@ export default function OrgSettingsPanel() {
             </form>
           </Section>
 
-          <Section title="جهات المراسلة">
+          <Section title="جهات المراسلة" hidden={tab !== "corrs"}>
             {correspondents.length === 0 && (
               <p className="text-xs text-text-secondary dark:text-white/40">لا جهات بعد.</p>
             )}

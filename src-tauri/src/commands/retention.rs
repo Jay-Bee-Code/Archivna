@@ -1,7 +1,7 @@
 use crate::commands::auth::{require_role, SessionState, ROLE_ADMIN};
-use crate::commands::documents::{full_document_payload, row_to_document, visibility_sql, ArchiveError, Document};
-use crate::db::DbState;
-use crate::sync::{store as sync_store, SyncState};
+use crate::commands::documents::{full_document_payload, row_to_document, ArchiveError, Document};
+use govt_archive_system::db::DbState;
+use govt_archive_system::sync::{store as sync_store, SyncState};
 use chrono::Utc;
 use rusqlite::params;
 use serde::Serialize;
@@ -18,7 +18,6 @@ macro_rules! require_conn {
     }};
 }
 
-const SECONDS_PER_YEAR: i64 = 365 * 24 * 3600;
 
 /// تعيين مدة الاحتفاظ (بالسنوات) لنوع وثيقة — None يعني "دائم، لا إتلاف تلقائي أبدًا"
 #[tauri::command]
@@ -104,34 +103,22 @@ pub fn list_disposal_candidates(
     let guard = require_conn!(db);
     let conn = guard.as_ref().unwrap();
 
-    // ملاحظة: لا يمكن بناء قائمة الأعمدة من DOC_COLUMNS بتقسيم نصّي ولصق "d."
-    // آليًا — العمود المحسوب `(ocr_text IS NOT NULL AND ocr_text <> '')` يحتوي
-    // قوسًا، فيصبح `d.(...)` وهو خطأ SQL (خلل حقيقي ظهر عند أول استخدام فعلي).
-    // القائمة هنا مكتوبة يدويًا بنفس ترتيب DOC_COLUMNS بالضبط، كما في search_documents.
+    // المنطق الفعلي في db/retention.rs (بلا Tauri) ليُختبر مباشرة بوقت ثابت.
+    // هنا فقط نجلب الصفوف الكاملة لمعرّفات المؤهَّلة.
+    let ids = govt_archive_system::db::retention::disposal_candidate_ids(conn, Utc::now().timestamp())?;
     let cols = "d.id, d.title, d.category_id, d.file_hash, d.file_size, d.mime_type,
                 d.created_at, d.updated_at, (d.ocr_text IS NOT NULL AND d.ocr_text <> ''),
                 d.department_id, d.document_type_id, d.registry_number, d.confidentiality_level, d.status,
                 d.legal_hold, d.disposed_at, d.physical_location, d.physical_status, d.borrowed_by, d.borrowed_at,
                 d.correspondent_id";
-    // ملاحظة حسّاسة أخرى: strftime('%s','now') في SQLite تُرجع TEXT، ومقارنتها بعدد صحيح
-    // تجعل الشرط صحيحًا دائمًا (TEXT > INTEGER في قواعد ترتيب الأنواع بـ SQLite)
-    // بصرف النظر عن التاريخ الفعلي — نمرّر الوقت الحالي من Rust بدل الاعتماد على SQL
-    let sql = format!(
-        "SELECT {cols} FROM documents d
-         JOIN document_types t ON d.document_type_id = t.id
-         WHERE t.retention_years IS NOT NULL
-           AND d.legal_hold = 0 AND d.disposed_at IS NULL AND d.is_deleted = 0
-           AND (d.created_at + t.retention_years * {SECONDS_PER_YEAR}) < :now{}
-         ORDER BY d.created_at ASC",
-        visibility_sql(&user.role)
-    );
-    let mut stmt = conn.prepare(&sql)?;
-    let now = Utc::now().timestamp();
-    // المدير دائمًا يتجاوز فلتر القسم/السرية هنا أصلًا (الدور الوحيد المسموح له بهذا الأمر)
-    let docs = stmt
-        .query_map(rusqlite::named_params! { ":now": now }, row_to_document)?
-        .filter_map(Result::ok)
-        .collect();
+    let mut docs = Vec::with_capacity(ids.len());
+    let mut stmt = conn.prepare(&format!("SELECT {cols} FROM documents d WHERE d.id = ?1"))?;
+    for id in ids {
+        if let Ok(doc) = stmt.query_row(rusqlite::params![id], row_to_document) {
+            docs.push(doc);
+        }
+    }
+    let _ = user; // الدور مُتحقَّق منه أعلاه (المدير فقط)
     Ok(docs)
 }
 
@@ -190,7 +177,7 @@ pub fn dispose_document(
     )?;
     if other_refs == 0 {
         if let Ok(dir) = app_handle.path().app_data_dir() {
-            let vault = crate::db::vault_dir(&dir);
+            let vault = govt_archive_system::db::vault_dir(&dir);
             if let Ok(path) = sync_store::blob_path(&vault, &file_hash) {
                 let _ = std::fs::remove_file(path); // best-effort: قد لا يكون الملف وصل لهذا الجهاز أصلًا
             }
