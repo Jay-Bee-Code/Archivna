@@ -135,25 +135,15 @@ export default function ArchivePage({
 
       <div className="flex-1 p-6 overflow-y-auto">
         <div className="flex items-center gap-3 mb-6">
-          <div className="relative flex-1 max-w-xl">
-            <IconSearch
-              size={15}
-              className="absolute top-1/2 -translate-y-1/2 start-3.5 text-text-secondary/50 dark:text-white/30 pointer-events-none"
-            />
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => onQueryChange(e.target.value)}
-              placeholder="بحث في الأرشيف… (العنوان والمحتوى)"
-              className="w-full ps-9 pe-4 py-2.5 rounded-lg border border-border-light dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-accent bg-white dark:bg-white/5 dark:text-white placeholder:text-text-secondary/70 dark:placeholder:text-white/30"
-            />
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl font-semibold text-ink">
+              {activeCategoryName ?? "كل الوثائق"}
+            </h2>
+            <p className="text-sm text-muted mt-0.5">
+              {query.trim() ? `نتائج البحث عن "${query.trim()}"` : "الوثائق المرفوعة في الأرشيف"}
+            </p>
           </div>
 
-          {activeCategoryName && (
-            <span className="text-xs px-3 py-1.5 rounded-full bg-accent/10 text-accent whitespace-nowrap">
-              الفئة: {activeCategoryName}
-            </span>
-          )}
 
           {canWrite && (
             <label className="shrink-0 cursor-pointer ms-auto">

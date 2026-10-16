@@ -5,7 +5,7 @@ import AdminSetup from "./components/AdminSetup";
 import SyncSetup from "./components/SyncSetup";
 import LoginScreen from "./components/LoginScreen";
 import Sidebar, { View } from "./components/Sidebar";
-import { IconLogout } from "./components/icons/Icon";
+import { IconLogout, IconSearch } from "./components/icons/Icon";
 import DashboardPage from "./pages/DashboardPage";
 import ArchivePage from "./pages/ArchivePage";
 import InboxPage from "./pages/InboxPage";
@@ -64,24 +64,51 @@ function AppShell({ user, onLogout }: { user: UserPublic; onLogout: () => void }
     }
   })();
 
+  const roleLabel = ROLE_LABELS[user.role] || user.role;
+  const displayName = user.full_name || user.username;
+  const initials = displayName.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join("");
+
   return (
-    <div className="h-screen flex overflow-hidden">
+    <div className="h-screen flex overflow-hidden bg-page">
       <Sidebar view={view} onNavigate={setView} isAdmin={isAdmin} inboxCount={inboxCount} />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="shrink-0 border-b border-border-light dark:border-white/10 bg-white dark:bg-bg-dark/60 backdrop-blur px-6 py-3 flex items-center justify-end gap-4">
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-text-primary dark:text-white/90">{user.full_name || user.username}</span>
-            <span className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 dark:bg-accent/20 text-primary dark:text-accent">
-              {ROLE_LABELS[user.role] || user.role}
-            </span>
+        {/* الهيدر: البحث هو المركز، ويعيش هنا في كل الصفحات */}
+        <header className="shrink-0 h-14 border-b border-line bg-raised flex items-center gap-4 px-6">
+          <div className="relative flex-1 max-w-xl">
+            <IconSearch size={15} className="absolute top-1/2 -translate-y-1/2 start-3 text-faint pointer-events-none" />
+            <input
+              type="search"
+              value={archiveQuery}
+              onChange={(e) => setArchiveQuery(e.target.value)}
+              onFocus={() => view !== "archive" && setView("archive")}
+              placeholder="ابحث في الوثائق بالعنوان أو المحتوى…"
+              aria-label="بحث في الأرشيف"
+              className="w-full h-9 ps-9 pe-3 rounded-md bg-sunken border border-transparent text-sm text-ink placeholder:text-faint focus:outline-none focus:bg-raised focus:border-accent focus:ring-2 focus:ring-accent-soft"
+            />
           </div>
-          <button
-            onClick={onLogout}
-            className="flex items-center gap-1.5 text-xs text-text-secondary dark:text-white/50 hover:text-danger px-2.5 py-1.5 rounded-lg hover:bg-danger/5 transition-colors"
-          >
-            <IconLogout size={14} /> خروج
-          </button>
+
+          <div className="ms-auto flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
+              <span
+                aria-hidden
+                className="w-8 h-8 rounded-full bg-accent-soft text-accent text-xs font-semibold flex items-center justify-center"
+              >
+                {initials}
+              </span>
+              <div className="leading-tight">
+                <p className="text-sm font-medium text-ink">{displayName}</p>
+                <p className="text-xs text-muted">{roleLabel}</p>
+              </div>
+            </div>
+            <span className="w-px h-6 bg-line" aria-hidden />
+            <button
+              onClick={onLogout}
+              className="flex items-center gap-1.5 h-8 px-2.5 rounded-md text-sm text-muted hover:text-danger hover:bg-danger-soft"
+            >
+              <IconLogout size={14} /> خروج
+            </button>
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto">{content}</main>
